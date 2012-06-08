@@ -54,11 +54,29 @@ public abstract class Resource implements Comparable<Resource> {
   @Stable
   public abstract void setMemory(int memory);
 
+
+  /**
+   * Get <em>number of cpu cores</em> of the resource.
+   * @return <em>num of cpu cores</em> of the resource
+   */
+  @Public
+  @Stable
+  public abstract int getCores();
+  
+  /**
+   * Set <em>number of cpu cores</em> of the resource.
+   * @param cores <em>number of cpu cores</em> of the resource
+   */
+  @Public
+  @Stable
+  public abstract void setCores(int cores);
+
   @Override
   public int hashCode() {
     final int prime = 31;
     int result = 1;
     result = prime * result + getMemory();
+    result = prime * result + getCores();
     return result;
   }
 
@@ -71,8 +89,10 @@ public abstract class Resource implements Comparable<Resource> {
     if (getClass() != obj.getClass())
       return false;
     Resource other = (Resource) obj;
-    if (getMemory() != other.getMemory())
+    if (getMemory() != other.getMemory() || 
+        getCores() != other.getCores()) {
       return false;
+    }
     return true;
   }
 

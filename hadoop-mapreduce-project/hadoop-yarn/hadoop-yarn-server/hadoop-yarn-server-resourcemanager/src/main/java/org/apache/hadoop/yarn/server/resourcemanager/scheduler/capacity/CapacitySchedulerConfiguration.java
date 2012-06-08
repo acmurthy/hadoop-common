@@ -26,11 +26,14 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.authorize.AccessControlList;
+import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.records.QueueACL;
 import org.apache.hadoop.yarn.api.records.QueueState;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.yarn.server.resourcemanager.resource.ResourceComparator;
+import org.apache.hadoop.yarn.server.resourcemanager.resource.ResourceMemoryComparator;
 import org.apache.hadoop.yarn.server.resourcemanager.resource.Resources;
 
 public class CapacitySchedulerConfiguration extends Configuration {
@@ -104,6 +107,12 @@ public class CapacitySchedulerConfiguration extends Configuration {
       PREFIX +"user-metrics.enable";
   @Private public static final boolean DEFAULT_ENABLE_USER_METRICS = false;
 
+  @Private public static final String RESOURCE_COMPARATOR_CLASS =
+      PREFIX + "resource-comparator";
+
+  @Private public static final Class<? extends ResourceComparator> 
+  DEFAULT_RESOURCE_COMPARATOR_CLASS = ResourceMemoryComparator.class;
+  
   @Private
   public static final String ROOT = "root";
 
@@ -257,5 +266,12 @@ public class CapacitySchedulerConfiguration extends Configuration {
 
   public boolean getEnableUserMetrics() {
     return getBoolean(ENABLE_USER_METRICS, DEFAULT_ENABLE_USER_METRICS);
+  }
+
+  public ResourceComparator getResourceComparator() {
+    return ReflectionUtils.newInstance(
+        getClass(RESOURCE_COMPARATOR_CLASS, DEFAULT_RESOURCE_COMPARATOR_CLASS, 
+              ResourceComparator.class), 
+        this);
   }
 }

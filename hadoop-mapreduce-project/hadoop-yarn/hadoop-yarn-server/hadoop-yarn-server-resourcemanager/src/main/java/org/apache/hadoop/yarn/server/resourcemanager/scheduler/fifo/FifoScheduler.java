@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +58,7 @@ import org.apache.hadoop.yarn.server.resourcemanager.RMAuditLogger;
 import org.apache.hadoop.yarn.server.resourcemanager.RMAuditLogger.AuditConstants;
 import org.apache.hadoop.yarn.server.resourcemanager.RMContext;
 import org.apache.hadoop.yarn.server.resourcemanager.recovery.Store.RMState;
+import org.apache.hadoop.yarn.server.resourcemanager.resource.ResourceMemoryComparator;
 import org.apache.hadoop.yarn.server.resourcemanager.resource.Resources;
 import org.apache.hadoop.yarn.server.resourcemanager.rmapp.attempt.RMAppAttemptEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.rmapp.attempt.RMAppAttemptEventType;
@@ -116,6 +118,9 @@ public class FifoScheduler implements ResourceScheduler, Configurable {
 
   private static final String DEFAULT_QUEUE_NAME = "default";
   private QueueMetrics metrics;
+  
+  private final Comparator<Resource> resourceComparator =
+      new ResourceMemoryComparator();
 
   private final Queue DEFAULT_QUEUE = new Queue() {
     @Override
@@ -378,7 +383,8 @@ public class FifoScheduler implements ResourceScheduler, Configurable {
       application.showRequests();
 
       // Done
-      if (Resources.lessThan(node.getAvailableResource(), minimumAllocation)) {
+      if (Resources.lessThan(resourceComparator, 
+              node.getAvailableResource(), minimumAllocation)) {
         return;
       }
     }
@@ -588,8 +594,8 @@ public class FifoScheduler implements ResourceScheduler, Configurable {
           completedContainer, RMContainerEventType.FINISHED);
     }
 
-    if (Resources.greaterThanOrEqual(node.getAvailableResource(),
-        minimumAllocation)) {
+    if (Resources.greaterThanOrEqual(resourceComparator, 
+            node.getAvailableResource(),minimumAllocation)) {
       LOG.debug("Node heartbeat " + rmNode.getNodeID() + 
           " available resource = " + node.getAvailableResource());
 
