@@ -18,6 +18,8 @@
 
 package org.apache.hadoop.yarn.server.resourcemanager.resource;
 
+import java.util.Comparator;
+
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.classification.InterfaceStability.Evolving;
 import org.apache.hadoop.yarn.api.records.Resource;
@@ -41,15 +43,34 @@ public class Resources {
     }
 
     @Override
+    public int getCores() {
+      return 0;
+    }
+
+    @Override
+    public void setCores(int cores) {
+      throw new RuntimeException("NONE cannot be modified!");
+    }
+
+    @Override
     public int compareTo(Resource o) {
-      return (0 - o.getMemory());
+      int diff = 0 - o.getMemory();
+      if (diff == 0) {
+        diff = 0 - o.getCores();
+      }
+      return diff;
     }
     
   };
 
   public static Resource createResource(int memory) {
+    return createResource(memory, 1);
+  }
+
+  public static Resource createResource(int memory, int cores) {
     Resource resource = Records.newRecord(Resource.class);
     resource.setMemory(memory);
+    resource.setCores(1);
     return resource;
   }
 
@@ -58,11 +79,12 @@ public class Resources {
   }
 
   public static Resource clone(Resource res) {
-    return createResource(res.getMemory());
+    return createResource(res.getMemory(), res.getCores());
   }
 
   public static Resource addTo(Resource lhs, Resource rhs) {
     lhs.setMemory(lhs.getMemory() + rhs.getMemory());
+    lhs.setCores(lhs.getCores() + rhs.getCores());
     return lhs;
   }
 
@@ -71,6 +93,7 @@ public class Resources {
   }
 
   public static Resource subtractFrom(Resource lhs, Resource rhs) {
+    lhs.setMemory(lhs.getMemory() - rhs.getMemory());
     lhs.setMemory(lhs.getMemory() - rhs.getMemory());
     return lhs;
   }
@@ -85,6 +108,7 @@ public class Resources {
 
   public static Resource multiplyTo(Resource lhs, int by) {
     lhs.setMemory(lhs.getMemory() * by);
+    lhs.setCores(lhs.getCores() * by);
     return lhs;
   }
 
@@ -93,30 +117,42 @@ public class Resources {
   }
 
   public static boolean equals(Resource lhs, Resource rhs) {
-    return lhs.getMemory() == rhs.getMemory();
+    return lhs.equals(rhs);
   }
 
-  public static boolean lessThan(Resource lhs, Resource rhs) {
-    return lhs.getMemory() < rhs.getMemory();
+  public static boolean lessThan(
+      Comparator<Resource> comparator, 
+      Resource lhs, Resource rhs) {
+    return (comparator.compare(lhs, rhs) < 0);
   }
 
-  public static boolean lessThanOrEqual(Resource lhs, Resource rhs) {
-    return lhs.getMemory() <= rhs.getMemory();
+  public static boolean lessThanOrEqual(
+      Comparator<Resource> comparator, 
+      Resource lhs, Resource rhs) {
+    return (comparator.compare(lhs, rhs) <= 0);
   }
 
-  public static boolean greaterThan(Resource lhs, Resource rhs) {
-    return lhs.getMemory() > rhs.getMemory();
+  public static boolean greaterThan(
+      Comparator<Resource> comparator, 
+      Resource lhs, Resource rhs) {
+    return comparator.compare(lhs, rhs) > 0;
   }
 
-  public static boolean greaterThanOrEqual(Resource lhs, Resource rhs) {
-    return lhs.getMemory() >= rhs.getMemory();
+  public static boolean greaterThanOrEqual(
+      Comparator<Resource> comparator, 
+      Resource lhs, Resource rhs) {
+    return comparator.compare(lhs, rhs) >= 0;
   }
   
-  public static Resource min(Resource lhs, Resource rhs) {
-    return (lhs.getMemory() < rhs.getMemory()) ? lhs : rhs;
+  public static Resource min(
+      Comparator<Resource> comparator, 
+      Resource lhs, Resource rhs) {
+    return comparator.compare(lhs, rhs) <= 0 ? lhs : rhs;
   }
 
-  public static Resource max(Resource lhs, Resource rhs) {
-    return (lhs.getMemory() > rhs.getMemory()) ? lhs : rhs;
+  public static Resource max(
+      Comparator<Resource> comparator, 
+      Resource lhs, Resource rhs) {
+    return comparator.compare(lhs, rhs) >= 0 ? lhs : rhs;
   }
 }

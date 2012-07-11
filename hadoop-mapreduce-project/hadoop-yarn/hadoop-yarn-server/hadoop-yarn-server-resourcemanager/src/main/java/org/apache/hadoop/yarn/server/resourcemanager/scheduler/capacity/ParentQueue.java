@@ -96,9 +96,10 @@ public class ParentQueue implements CSQueue {
   private final RecordFactory recordFactory = 
     RecordFactoryProvider.getRecordFactory(null);
 
+  private final Comparator<Resource> resourceComparator;
+  
   public ParentQueue(CapacitySchedulerContext cs, 
-      String queueName, Comparator<CSQueue> comparator, 
-      CSQueue parent, CSQueue old) {
+      String queueName, CSQueue parent, CSQueue old) {
     minimumAllocation = cs.getMinimumResourceCapability();
     
     this.parent = parent;
@@ -143,9 +144,11 @@ public class ParentQueue implements CSQueue {
         capacity, absoluteCapacity, 
         maximumCapacity, absoluteMaxCapacity, state, acls);
     
-    this.queueComparator = comparator;
+    this.queueComparator = cs.getQueueComparator();
     this.childQueues = new TreeSet<CSQueue>(queueComparator);
 
+    this.resourceComparator = cs.getResourceComparator();
+    
     LOG.info("Initialized parent-queue " + queueName + 
         " name=" + queueName + 
         ", fullname=" + getQueuePath()); 
@@ -537,7 +540,8 @@ public class ParentQueue implements CSQueue {
       assignment.setType(assignedToChild.getType());
       
       // Done if no child-queue assigned anything
-      if (Resources.greaterThan(assignedToChild.getResource(), 
+      if (Resources.greaterThan(
+              resourceComparator, assignedToChild.getResource(), 
               Resources.none())) {
         // Track resource utilization for the parent-queue
         allocateResource(clusterResource, assignedToChild.getResource());
@@ -596,8 +600,8 @@ public class ParentQueue implements CSQueue {
   
   private boolean canAssign(SchedulerNode node) {
     return (node.getReservedContainer() == null) && 
-        Resources.greaterThanOrEqual(node.getAvailableResource(), 
-                                     minimumAllocation);
+        Resources.greaterThanOrEqual(resourceComparator,
+            node.getAvailableResource(), minimumAllocation);
   }
   
   synchronized CSAssignment assignContainersToChildQueues(Resource cluster, 
@@ -622,7 +626,8 @@ public class ParentQueue implements CSQueue {
       }
 
       // If we do assign, remove the queue and re-insert in-order to re-sort
-      if (Resources.greaterThan(assignment.getResource(), Resources.none())) {
+      if (Resources.greaterThan(
+              resourceComparator, assignment.getResource(), Resources.none())) {
         // Remove and re-insert to sort
         iter.remove();
         LOG.info("Re-sorting queues since queue: " + childQueue.getQueuePath() + 

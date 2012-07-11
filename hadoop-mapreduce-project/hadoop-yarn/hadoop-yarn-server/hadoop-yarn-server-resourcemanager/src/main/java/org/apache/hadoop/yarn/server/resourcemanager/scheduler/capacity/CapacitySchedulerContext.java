@@ -18,9 +18,12 @@
 
 package org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity;
 
+import java.util.Comparator;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.server.resourcemanager.RMContext;
+import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerApp;
 import org.apache.hadoop.yarn.server.security.ContainerTokenSecretManager;
 
 /**
@@ -45,4 +48,10 @@ public interface CapacitySchedulerContext {
    * Get the yarn configuration.
    */
   Configuration getConf();
+
+  Comparator<SchedulerApp> getApplicationComparator();
+
+  Comparator<Resource> getResourceComparator();
+
+  Comparator<CSQueue> getQueueComparator();
 }

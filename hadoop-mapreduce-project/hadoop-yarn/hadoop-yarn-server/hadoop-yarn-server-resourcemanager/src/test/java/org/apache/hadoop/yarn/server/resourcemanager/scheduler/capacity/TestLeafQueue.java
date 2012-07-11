@@ -34,6 +34,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +55,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.factories.RecordFactory;
 import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
 import org.apache.hadoop.yarn.server.resourcemanager.RMContext;
+import org.apache.hadoop.yarn.server.resourcemanager.resource.ResourceMemoryComparator;
 import org.apache.hadoop.yarn.server.resourcemanager.resource.Resources;
 import org.apache.hadoop.yarn.server.resourcemanager.rmapp.attempt.RMAppAttemptState;
 import org.apache.hadoop.yarn.server.resourcemanager.rmcontainer.RMContainer;
@@ -89,6 +91,9 @@ public class TestLeafQueue {
   final static int GB = 1024;
   final static String DEFAULT_RACK = "/default";
 
+  private final Comparator<Resource> resourceComparator =
+      new ResourceMemoryComparator();
+  
   @Before
   public void setUp() throws Exception {
     CapacityScheduler spyCs = new CapacityScheduler();
@@ -111,12 +116,16 @@ public class TestLeafQueue {
         thenReturn(Resources.createResource(16*GB));
     when(csContext.getClusterResources()).
         thenReturn(Resources.createResource(100 * 16 * GB));
+    when(csContext.getApplicationComparator()).
+    thenReturn(CapacityScheduler.applicationComparator);
+    when(csContext.getQueueComparator()).
+        thenReturn(CapacityScheduler.queueComparator);
+    when(csContext.getResourceComparator()).
+        thenReturn(resourceComparator);
+
     root = 
         CapacityScheduler.parseQueue(csContext, csConf, null, "root", 
-            queues, queues, 
-            CapacityScheduler.queueComparator, 
-            CapacityScheduler.applicationComparator, 
-            TestUtils.spyHook);
+            queues, queues, TestUtils.spyHook);
 
     cs.reinitialize(csConf, null, rmContext);
   }

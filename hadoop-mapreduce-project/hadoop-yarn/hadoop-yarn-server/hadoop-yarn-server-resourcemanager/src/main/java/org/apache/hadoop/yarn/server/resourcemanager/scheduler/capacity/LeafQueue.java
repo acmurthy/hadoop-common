@@ -126,9 +126,10 @@ public class LeafQueue implements CSQueue {
   
   private final ActiveUsersManager activeUsersManager;
   
+  private final Comparator<Resource> resourceComparator;
+  
   public LeafQueue(CapacitySchedulerContext cs, 
-      String queueName, CSQueue parent, 
-      Comparator<SchedulerApp> applicationComparator, CSQueue old) {
+      String queueName, CSQueue parent, CSQueue old) {
     this.scheduler = cs;
     this.queueName = queueName;
     this.parent = parent;
@@ -200,9 +201,13 @@ public class LeafQueue implements CSQueue {
         + ", fullname=" + getQueuePath());
     }
 
+    Comparator<SchedulerApp> applicationComparator =
+        cs.getApplicationComparator();
     this.pendingApplications = 
         new TreeSet<SchedulerApp>(applicationComparator);
     this.activeApplications = new TreeSet<SchedulerApp>(applicationComparator);
+    
+    this.resourceComparator = cs.getResourceComparator();
   }
 
   private synchronized void setupQueueConfigs(
@@ -809,7 +814,8 @@ public class LeafQueue implements CSQueue {
 
           // Did we schedule or reserve a container?
           Resource assigned = assignment.getResource();
-          if (Resources.greaterThan(assigned, Resources.none())) {
+          if (Resources.greaterThan(
+              resourceComparator, assigned, Resources.none())) {
 
             // Book-keeping 
             // Note: Update headroom to account for current allocation too...
@@ -860,7 +866,7 @@ public class LeafQueue implements CSQueue {
     
     // Doesn't matter... since it's already charged for at time of reservation
     // "re-reservation" is *free*
-    return org.apache.hadoop.yarn.server.resourcemanager.resource.Resource.NONE;
+    return Resources.none();
   }
 
   private synchronized boolean assignToQueue(Resource clusterResource, 
@@ -904,7 +910,9 @@ public class LeafQueue implements CSQueue {
     
     Resource userConsumed = getUser(user).getConsumedResources(); 
     Resource headroom = 
-        Resources.subtract(Resources.min(userLimit, queueMaxCap), userConsumed);
+        Resources.subtract(
+            Resources.min(resourceComparator, userLimit, queueMaxCap), 
+            userConsumed);
     
     if (LOG.isDebugEnabled()) {
       LOG.debug("Headroom calculation for user " + user + ": " + 
@@ -1047,7 +1055,7 @@ public class LeafQueue implements CSQueue {
     assigned = 
         assignNodeLocalContainers(clusterResource, node, application, priority,
             reservedContainer); 
-    if (Resources.greaterThan(assigned, Resources.none())) {
+    if (Resources.greaterThan(resourceComparator, assigned, Resources.none())) {
       return new CSAssignment(assigned, NodeType.NODE_LOCAL);
     }
 
@@ -1055,7 +1063,7 @@ public class LeafQueue implements CSQueue {
     assigned = 
         assignRackLocalContainers(clusterResource, node, application, priority, 
             reservedContainer);
-    if (Resources.greaterThan(assigned, Resources.none())) {
+    if (Resources.greaterThan(resourceComparator, assigned, Resources.none())) {
       return new CSAssignment(assigned, NodeType.RACK_LOCAL);
     }
     

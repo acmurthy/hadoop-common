@@ -388,6 +388,10 @@ public class YarnConfiguration extends Configuration {
   public static final String NM_PMEM_MB = NM_PREFIX + "resource.memory-mb";
   public static final int DEFAULT_NM_PMEM_MB = 8 * 1024;
 
+  /** Number of CPU Cores which can be allocated for containers.*/
+  public static final String NM_CORES = NM_PREFIX + "resource.cpu-cores";
+  public static final int DEFAULT_NM_CORES = 8;
+
   public static final String NM_VMEM_PMEM_RATIO =
     NM_PREFIX + "vmem-pmem-ratio";
   public static final float DEFAULT_NM_VMEM_PMEM_RATIO = 2.1f;

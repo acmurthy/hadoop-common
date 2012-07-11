@@ -35,7 +35,6 @@ import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.Lock;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.Container;
@@ -46,11 +45,13 @@ import org.apache.hadoop.yarn.api.records.QueueInfo;
 import org.apache.hadoop.yarn.api.records.QueueUserACLInfo;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.ResourceRequest;
+import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
 import org.apache.hadoop.yarn.server.resourcemanager.RMAuditLogger;
 import org.apache.hadoop.yarn.server.resourcemanager.RMAuditLogger.AuditConstants;
 import org.apache.hadoop.yarn.server.resourcemanager.RMContext;
 import org.apache.hadoop.yarn.server.resourcemanager.recovery.Store.RMState;
+import org.apache.hadoop.yarn.server.resourcemanager.resource.ResourceComparator;
 import org.apache.hadoop.yarn.server.resourcemanager.resource.Resources;
 import org.apache.hadoop.yarn.server.resourcemanager.rmapp.attempt.RMAppAttemptEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.rmapp.attempt.RMAppAttemptEventType;
@@ -146,6 +147,8 @@ implements ResourceScheduler, CapacitySchedulerContext, Configurable {
 
   private boolean initialized = false;
 
+  private ResourceComparator resourceComparator;
+  
   public CapacityScheduler() {}
 
   @Override
@@ -178,6 +181,21 @@ implements ResourceScheduler, CapacitySchedulerContext, Configurable {
   }
 
   @Override
+  public Comparator<SchedulerApp> getApplicationComparator() {
+    return applicationComparator;
+  }
+
+  @Override
+  public Comparator<Resource> getResourceComparator() {
+    return resourceComparator;
+  }
+
+  @Override
+  public Comparator<CSQueue> getQueueComparator() {
+    return queueComparator;
+  }
+
+  @Override
   public synchronized int getNumClusterNodes() {
     return numNodeManagers;
   }
@@ -198,11 +216,18 @@ implements ResourceScheduler, CapacitySchedulerContext, Configurable {
   throws IOException {
     if (!initialized) {
       this.conf = new CapacitySchedulerConfiguration(conf);
+      
       this.minimumAllocation = this.conf.getMinimumAllocation();
       this.maximumAllocation = this.conf.getMaximumAllocation();
+      
+      this.resourceComparator = this.conf.getResourceComparator();
+      this.resourceComparator.setClusterResource(this.clusterResource);
+      
       this.containerTokenSecretManager = containerTokenSecretManager;
       this.rmContext = rmContext;
+      
       initializeQueues(this.conf);
+      
       initialized = true;
     } else {
 
@@ -233,8 +258,8 @@ implements ResourceScheduler, CapacitySchedulerContext, Configurable {
   private void initializeQueues(CapacitySchedulerConfiguration conf)
     throws IOException {
     root = 
-        parseQueue(this, conf, null, CapacitySchedulerConfiguration.ROOT, queues, queues, 
-            queueComparator, applicationComparator, noop);
+        parseQueue(this, conf, null, CapacitySchedulerConfiguration.ROOT, 
+            queues, queues, noop);
     LOG.info("Initialized root queue " + root);
   }
 
@@ -244,8 +269,8 @@ implements ResourceScheduler, CapacitySchedulerContext, Configurable {
     // Parse new queues
     Map<String, CSQueue> newQueues = new HashMap<String, CSQueue>();
     CSQueue newRoot = 
-        parseQueue(this, conf, null, CapacitySchedulerConfiguration.ROOT, newQueues, queues, 
-            queueComparator, applicationComparator, noop);
+        parseQueue(this, conf, null, CapacitySchedulerConfiguration.ROOT, 
+            newQueues, queues, noop); 
     
     // Ensure all existing queues are still present
     validateExistingQueues(queues, newQueues);
@@ -298,8 +323,6 @@ implements ResourceScheduler, CapacitySchedulerContext, Configurable {
       CapacitySchedulerConfiguration conf, 
       CSQueue parent, String queueName, Map<String, CSQueue> queues,
       Map<String, CSQueue> oldQueues, 
-      Comparator<CSQueue> queueComparator,
-      Comparator<SchedulerApp> applicationComparator,
       QueueHook hook) throws IOException {
     CSQueue queue;
     String[] childQueueNames = 
@@ -310,15 +333,14 @@ implements ResourceScheduler, CapacitySchedulerContext, Configurable {
         throw new IllegalStateException(
             "Queue configuration missing child queue names for " + queueName);
       }
-      queue = new LeafQueue(csContext, queueName, parent, applicationComparator,
-                            oldQueues.get(queueName));
+      queue = 
+          new LeafQueue(csContext, queueName, parent,oldQueues.get(queueName));
       
       // Used only for unit tests
       queue = hook.hook(queue);
     } else {
       ParentQueue parentQueue = 
-        new ParentQueue(csContext, queueName, queueComparator, parent,
-                        oldQueues.get(queueName));
+        new ParentQueue(csContext, queueName, parent,oldQueues.get(queueName));
 
       // Used only for unit tests
       queue = hook.hook(parentQueue);
@@ -327,7 +349,7 @@ implements ResourceScheduler, CapacitySchedulerContext, Configurable {
       for (String childQueueName : childQueueNames) {
         CSQueue childQueue = 
           parseQueue(csContext, conf, queue, childQueueName, 
-              queues, oldQueues, queueComparator, applicationComparator, hook);
+              queues, oldQueues, hook);
         childQueues.add(childQueue);
       }
       parentQueue.setChildQueues(childQueues);
