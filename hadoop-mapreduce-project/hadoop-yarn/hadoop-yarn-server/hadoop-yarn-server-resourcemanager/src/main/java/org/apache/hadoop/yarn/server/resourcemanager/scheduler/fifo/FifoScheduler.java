@@ -383,7 +383,7 @@ public class FifoScheduler implements ResourceScheduler, Configurable {
       // Done
       if (Resources.lessThan(resourceComparator, 
               node.getAvailableResource(), minimumAllocation)) {
-        return;
+        break;
       }
     }
 
