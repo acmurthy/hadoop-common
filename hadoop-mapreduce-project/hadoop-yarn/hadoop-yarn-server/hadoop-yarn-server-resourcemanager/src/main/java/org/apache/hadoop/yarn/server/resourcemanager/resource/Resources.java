@@ -18,8 +18,6 @@
 
 package org.apache.hadoop.yarn.server.resourcemanager.resource;
 
-import java.util.Comparator;
-
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.classification.InterfaceStability.Evolving;
 import org.apache.hadoop.yarn.api.records.Resource;
@@ -94,7 +92,7 @@ public class Resources {
 
   public static Resource subtractFrom(Resource lhs, Resource rhs) {
     lhs.setMemory(lhs.getMemory() - rhs.getMemory());
-    lhs.setMemory(lhs.getMemory() - rhs.getMemory());
+    lhs.setCores(lhs.getCores() - rhs.getCores());
     return lhs;
   }
 
@@ -126,42 +124,47 @@ public class Resources {
     return out;
   }
 
+  public static float divide(ResourceComparator comparator,
+      Resource lhs, Resource rhs) {
+    return comparator.divide(lhs, rhs);
+  }
+  
   public static boolean equals(Resource lhs, Resource rhs) {
     return lhs.equals(rhs);
   }
 
   public static boolean lessThan(
-      Comparator<Resource> comparator, 
+      ResourceComparator comparator, 
       Resource lhs, Resource rhs) {
     return (comparator.compare(lhs, rhs) < 0);
   }
 
   public static boolean lessThanOrEqual(
-      Comparator<Resource> comparator, 
+      ResourceComparator comparator, 
       Resource lhs, Resource rhs) {
     return (comparator.compare(lhs, rhs) <= 0);
   }
 
   public static boolean greaterThan(
-      Comparator<Resource> comparator, 
+      ResourceComparator comparator, 
       Resource lhs, Resource rhs) {
     return comparator.compare(lhs, rhs) > 0;
   }
 
   public static boolean greaterThanOrEqual(
-      Comparator<Resource> comparator, 
+      ResourceComparator comparator, 
       Resource lhs, Resource rhs) {
     return comparator.compare(lhs, rhs) >= 0;
   }
   
   public static Resource min(
-      Comparator<Resource> comparator, 
+      ResourceComparator comparator, 
       Resource lhs, Resource rhs) {
     return comparator.compare(lhs, rhs) <= 0 ? lhs : rhs;
   }
 
   public static Resource max(
-      Comparator<Resource> comparator, 
+      ResourceComparator comparator, 
       Resource lhs, Resource rhs) {
     return comparator.compare(lhs, rhs) >= 0 ? lhs : rhs;
   }

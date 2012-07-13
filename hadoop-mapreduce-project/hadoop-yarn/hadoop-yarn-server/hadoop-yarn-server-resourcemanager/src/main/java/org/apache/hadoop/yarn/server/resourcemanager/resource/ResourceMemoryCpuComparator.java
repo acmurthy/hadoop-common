@@ -25,8 +25,8 @@ public class ResourceMemoryCpuComparator implements ResourceComparator {
   
   @Override
   public int compare(Resource lhs, Resource rhs) {
-    float l = getDominantResource(lhs);
-    float r = getDominantResource(rhs);
+    float l = getResourceAsValue(lhs);
+    float r = getResourceAsValue(rhs);
     
     if (l < r) {
       return -1;
@@ -37,16 +37,29 @@ public class ResourceMemoryCpuComparator implements ResourceComparator {
     return 0;
   }
 
-  private float getDominantResource(Resource lhs) {
+  protected float getResourceAsValue(Resource resource) {
+    // Just use 'dominant' resource
     return Math.max(
-        (float)lhs.getMemory() / clusterResource.getMemory(), 
-        (float)lhs.getCores() / clusterResource.getCores()
+        (float)resource.getMemory() / clusterResource.getMemory(), 
+        (float)resource.getCores() / clusterResource.getCores()
         );
   }
   
   @Override
   public void setClusterResource(Resource clusterResource) {
     this.clusterResource = clusterResource;
+  }
+
+  @Override
+  public int computeAvailableContainers(Resource available, Resource required) {
+    return Math.min(
+        available.getMemory() / required.getMemory(), 
+        available.getCores() / required.getCores());
+  }
+
+  @Override
+  public float divide(Resource lhs, Resource rhs) {
+    return getResourceAsValue(lhs) / getResourceAsValue(rhs);
   }
 
 }

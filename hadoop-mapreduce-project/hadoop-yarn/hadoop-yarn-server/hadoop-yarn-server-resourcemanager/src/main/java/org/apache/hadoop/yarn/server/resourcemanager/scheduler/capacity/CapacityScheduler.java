@@ -186,7 +186,7 @@ implements ResourceScheduler, CapacitySchedulerContext, Configurable {
   }
 
   @Override
-  public Comparator<Resource> getResourceComparator() {
+  public ResourceComparator getResourceComparator() {
     return resourceComparator;
   }
 

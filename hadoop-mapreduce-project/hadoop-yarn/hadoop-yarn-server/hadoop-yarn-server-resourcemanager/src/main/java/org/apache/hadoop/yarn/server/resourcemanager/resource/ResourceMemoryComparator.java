@@ -34,4 +34,15 @@ public class ResourceMemoryComparator implements ResourceComparator {
     this.clusterResource = clusterResource;
   }
 
+  @Override
+  public int computeAvailableContainers(Resource available, Resource required) {
+    // Only consider memory
+    return available.getMemory() / required.getMemory();
+  }
+
+  @Override
+  public float divide(Resource lhs, Resource rhs) {
+    return (float)lhs.getMemory() / rhs.getMemory();
+  }
+
 }

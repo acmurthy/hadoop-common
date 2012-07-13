@@ -8,4 +8,7 @@ public interface ResourceComparator extends Comparator<Resource> {
 
   void setClusterResource(Resource clusterResource);
   
+  int computeAvailableContainers(Resource available, Resource required);
+
+  float divide(Resource lhs, Resource rhs);
 }

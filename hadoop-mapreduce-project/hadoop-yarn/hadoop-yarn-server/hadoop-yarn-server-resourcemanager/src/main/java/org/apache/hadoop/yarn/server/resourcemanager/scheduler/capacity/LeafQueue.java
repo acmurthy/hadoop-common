@@ -53,6 +53,7 @@ import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.ResourceRequest;
 import org.apache.hadoop.yarn.factories.RecordFactory;
 import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
+import org.apache.hadoop.yarn.server.resourcemanager.resource.ResourceComparator;
 import org.apache.hadoop.yarn.server.resourcemanager.resource.Resources;
 import org.apache.hadoop.yarn.server.resourcemanager.rmcontainer.RMContainer;
 import org.apache.hadoop.yarn.server.resourcemanager.rmcontainer.RMContainerEventType;
@@ -124,13 +125,16 @@ public class LeafQueue implements CSQueue {
   
   private final ActiveUsersManager activeUsersManager;
   
-  private final Comparator<Resource> resourceComparator;
+  private final ResourceComparator resourceComparator;
   
   public LeafQueue(CapacitySchedulerContext cs, 
       String queueName, CSQueue parent, CSQueue old) {
     this.scheduler = cs;
     this.queueName = queueName;
     this.parent = parent;
+    
+    this.resourceComparator = cs.getResourceComparator();
+
     // must be after parent and queueName are initialized
     this.metrics = old != null ? old.getMetrics() :
         QueueMetrics.forQueue(getQueuePath(), parent,
@@ -140,8 +144,9 @@ public class LeafQueue implements CSQueue {
     this.minimumAllocation = cs.getMinimumResourceCapability();
     this.maximumAllocation = cs.getMaximumResourceCapability();
     this.minimumAllocationFactor = 
-        (float)(maximumAllocation.getMemory() - minimumAllocation.getMemory()) / 
-         maximumAllocation.getMemory();
+        Resources.divide(resourceComparator, 
+            Resources.subtract(maximumAllocation, minimumAllocation), 
+            maximumAllocation);
     this.containerTokenSecretManager = cs.getContainerTokenSecretManager();
 
     float capacity = 
@@ -204,8 +209,6 @@ public class LeafQueue implements CSQueue {
     this.pendingApplications = 
         new TreeSet<SchedulerApp>(applicationComparator);
     this.activeApplications = new TreeSet<SchedulerApp>(applicationComparator);
-    
-    this.resourceComparator = cs.getResourceComparator();
   }
 
   private synchronized void setupQueueConfigs(
@@ -532,7 +535,7 @@ public class LeafQueue implements CSQueue {
     return queueName + ": " + 
         "capacity=" + capacity + ", " + 
         "absoluteCapacity=" + absoluteCapacity + ", " + 
-        "usedResources=" + usedResources.getMemory() + "MB, " + 
+        "usedResources=" + usedResources +  
         "usedCapacity=" + getUsedCapacity() + ", " + 
         "absoluteUsedCapacity=" + getAbsoluteUsedCapacity() + ", " +
         "numApps=" + getNumApplications() + ", " + 
@@ -871,14 +874,16 @@ public class LeafQueue implements CSQueue {
       Resource required) {
     // Check how of the cluster's absolute capacity we are currently using...
     float potentialNewCapacity = 
-      (float)(usedResources.getMemory() + required.getMemory()) / 
-        clusterResource.getMemory();
+        Resources.divide(resourceComparator, 
+            Resources.add(usedResources, required), clusterResource);
     if (potentialNewCapacity > absoluteMaxCapacity) {
       LOG.info(getQueueName() + 
-          " usedResources: " + usedResources.getMemory() +
-          " clusterResources: " + clusterResource.getMemory() +
-          " currentCapacity " + ((float)usedResources.getMemory())/clusterResource.getMemory() + 
-          " required " + required.getMemory() +
+          " usedResources: " + usedResources +
+          " clusterResources: " + clusterResource +
+          " currentCapacity " + 
+            Resources.divide(resourceComparator, usedResources, 
+                clusterResource) + 
+          " required " + required +
           " potentialNewCapacity: " + potentialNewCapacity + " ( " +
           " max-capacity: " + absoluteMaxCapacity + ")");
       return false;
@@ -980,7 +985,7 @@ public class LeafQueue implements CSQueue {
           " qconsumed: " + consumed +
           " currentCapacity: " + currentCapacity +
           " activeUsers: " + activeUsers +
-          " clusterCapacity: " + clusterResource.getMemory()
+          " clusterCapacity: " + clusterResource
       );
     }
 
@@ -992,8 +997,9 @@ public class LeafQueue implements CSQueue {
     User user = getUser(userName);
     
     // Note: We aren't considering the current request since there is a fixed
-    // overhead of the AM, but it's a > check, not a >= check, so... 
-    if ((user.getConsumedResources().getMemory()) > limit.getMemory()) {
+    // overhead of the AM, but it's a > check, not a >= check, so...
+    if (Resources.greaterThan(resourceComparator, 
+            user.getConsumedResources(), limit)) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("User " + userName + " in queue " + getQueueName() + 
             " will exceed limit - " +  
@@ -1021,7 +1027,8 @@ public class LeafQueue implements CSQueue {
     int starvation = 0;
     if (reservedContainers > 0) {
       float nodeFactor = 
-          ((float)required.getMemory() / getMaximumAllocation().getMemory());
+          Resources.divide(resourceComparator, required, getMaximumAllocation()
+              );
       
       // Use percentage of node required to bias against large containers...
       // Protect against corner case where you need the whole node with
@@ -1213,7 +1220,8 @@ public class LeafQueue implements CSQueue {
 
     Resource available = node.getAvailableResource();
 
-    assert (available.getMemory() >  0);
+    assert Resources.greaterThan(resourceComparator, available, 
+        Resources.none());
 
     // Create the container if necessary
     Container container = 
@@ -1221,12 +1229,13 @@ public class LeafQueue implements CSQueue {
   
     // something went wrong getting/creating the container 
     if (container == null) {
+      LOG.warn("Couldn't get container for allocation!");
       return Resources.none();
     }
 
     // Can we allocate a container on this node?
     int availableContainers = 
-        available.getMemory() / capability.getMemory();         
+        resourceComparator.computeAvailableContainers(available, capability);
     if (availableContainers > 0) {
       // Allocate...
 
@@ -1238,8 +1247,9 @@ public class LeafQueue implements CSQueue {
       // Inform the application
       RMContainer allocatedContainer = 
           application.allocate(type, node, priority, request, container);
+
+      // Does the application need this resource?
       if (allocatedContainer == null) {
-        // Did the application need this resource?
         return Resources.none();
       }
 
