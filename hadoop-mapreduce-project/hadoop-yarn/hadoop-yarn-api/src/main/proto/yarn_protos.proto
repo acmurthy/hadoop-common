@@ -91,6 +91,7 @@ enum YarnApplicationStateProto {
   FINISHED = 4;
   FAILED = 5;
   KILLED = 6;
+  ACCEPTED = 7;
 }
 
 enum FinalApplicationStatusProto {
@@ -171,6 +172,7 @@ message ApplicationReportProto {
   optional FinalApplicationStatusProto final_application_status = 15;
   optional ApplicationResourceUsageReportProto app_resource_Usage = 16;
   optional string originalTrackingUrl = 17;
+  optional ApplicationAttemptIdProto currentApplicationAttemptId = 18;
 }
 
 enum NodeStateProto {
@@ -236,6 +238,7 @@ message ApplicationSubmissionContextProto {
   optional PriorityProto priority = 5;
   optional ContainerLaunchContextProto am_container_spec = 6;
   optional bool cancel_tokens_when_complete = 7 [default = true];
+  optional bool unmanaged_am = 8 [default = false];
 }
 
 enum ApplicationAccessTypeProto {
