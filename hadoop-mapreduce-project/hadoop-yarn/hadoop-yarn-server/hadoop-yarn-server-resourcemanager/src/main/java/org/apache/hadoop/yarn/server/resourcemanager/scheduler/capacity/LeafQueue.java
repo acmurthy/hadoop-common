@@ -144,7 +144,7 @@ public class LeafQueue implements CSQueue {
     this.minimumAllocation = cs.getMinimumResourceCapability();
     this.maximumAllocation = cs.getMaximumResourceCapability();
     this.minimumAllocationFactor = 
-        Resources.divide(resourceComparator, 
+        Resources.divideBy(resourceComparator, 
             Resources.subtract(maximumAllocation, minimumAllocation), 
             maximumAllocation);
     this.containerTokenSecretManager = cs.getContainerTokenSecretManager();
@@ -874,8 +874,10 @@ public class LeafQueue implements CSQueue {
       Resource required) {
     // Check how of the cluster's absolute capacity we are currently using...
     float potentialNewCapacity = 
-        Resources.divide(resourceComparator, 
-            Resources.add(usedResources, required), clusterResource);
+        Resources.divide(
+            resourceComparator, 
+            Resources.add(usedResources, required), 
+            clusterResource);
     if (potentialNewCapacity > absoluteMaxCapacity) {
       LOG.info(getQueueName() + 
           " usedResources: " + usedResources +
@@ -906,11 +908,16 @@ public class LeafQueue implements CSQueue {
     
 
     Resource queueMaxCap =                        // Queue Max-Capacity
+        Resources.roundDown(
+            resourceComparator, 
+            Resources.multiply(clusterResource, absoluteMaxCapacity), 
+            minimumAllocation);
+        /*
         Resources.createResource(
             CSQueueUtils.roundDown(minimumAllocation, 
                 (int)(absoluteMaxCapacity * clusterResource.getMemory()))
             );
-    
+        */
     Resource userConsumed = getUser(user).getConsumedResources(); 
     Resource headroom = 
         Resources.subtract(
@@ -942,19 +949,35 @@ public class LeafQueue implements CSQueue {
     //   (usedResources + required) (which extra resources we are allocating)
 
     // Allow progress for queues with miniscule capacity
-    final int queueCapacity = 
+    final Resource queueCapacity = 
+        Resources.max(
+            resourceComparator, 
+            Resources.roundUp(
+                resourceComparator, 
+                Resources.multiply(clusterResource, absoluteCapacity), 
+                minimumAllocation), 
+            required);
+    /*
+    int queueCapacity = 
       Math.max(
           CSQueueUtils.roundUp(
               minimumAllocation, 
               (int)(absoluteCapacity * clusterResource.getMemory())), 
           required.getMemory()
           );
-
+    */
+    
+    /*
     final int consumed = usedResources.getMemory();
     final int currentCapacity = 
       (consumed < queueCapacity) ? 
           queueCapacity : (consumed + required.getMemory());
-
+     */
+    
+    Resource currentCapacity =
+        Resources.lessThan(resourceComparator, usedResources, queueCapacity) ?
+            queueCapacity : Resources.add(usedResources, required);
+    
     // Never allow a single user to take more than the 
     // queue's configured capacity * user-limit-factor.
     // Also, the queue's configured capacity should be higher than 
@@ -962,15 +985,36 @@ public class LeafQueue implements CSQueue {
     
     final int activeUsers = activeUsersManager.getNumActiveUsers();  
 
+    /*
     int limit = 
       CSQueueUtils.roundUp(
           minimumAllocation,
           Math.min(
-              Math.max(divideAndCeil(currentCapacity, activeUsers), 
-                       divideAndCeil((int)userLimit*currentCapacity, 100)),
+              Math.max(
+                  CSQueueUtils.divideAndCeil(currentCapacity, activeUsers), 
+                  CSQueueUtils.divideAndCeil((int)userLimit*currentCapacity, 
+                      100)),
               (int)(queueCapacity * userLimitFactor)
               )
           );
+    */
+    Resource userCapacityLimit = 
+        Resources.multiply(currentCapacity, userLimitFactor);
+    Resource limit =
+        Resources.roundUp(
+            resourceComparator, 
+            Resources.min(
+                resourceComparator, 
+                Resources.max(
+                    resourceComparator, 
+                    Resources.divideAndCeil(
+                        resourceComparator, currentCapacity, activeUsers),
+                    Resources.divideAndCeil(
+                        resourceComparator, userCapacityLimit, 100)
+                    ), 
+                Resources.multiply(queueCapacity, userLimitFactor)
+                ), 
+            minimumAllocation);
 
     if (LOG.isDebugEnabled()) {
       String userName = application.getUser();
@@ -982,14 +1026,14 @@ public class LeafQueue implements CSQueue {
           " consumed: " + getUser(userName).getConsumedResources() + 
           " limit: " + limit +
           " queueCapacity: " + queueCapacity + 
-          " qconsumed: " + consumed +
+          " qconsumed: " + usedResources +
           " currentCapacity: " + currentCapacity +
           " activeUsers: " + activeUsers +
           " clusterCapacity: " + clusterResource
       );
     }
 
-    return Resources.createResource(limit);
+    return limit;
   }
   
   private synchronized boolean assignToUser(String userName, Resource limit) {
@@ -1013,21 +1057,14 @@ public class LeafQueue implements CSQueue {
     return true;
   }
 
-  static int divideAndCeil(int a, int b) {
-    if (b == 0) {
-      LOG.info("divideAndCeil called with a=" + a + " b=" + b);
-      return 0;
-    }
-    return (a + (b - 1)) / b;
-  }
-
   boolean needContainers(SchedulerApp application, Priority priority, Resource required) {
     int requiredContainers = application.getTotalRequiredResources(priority);
     int reservedContainers = application.getNumReservedContainers(priority);
     int starvation = 0;
     if (reservedContainers > 0) {
       float nodeFactor = 
-          Resources.divide(resourceComparator, required, getMaximumAllocation()
+          Resources.divideBy(
+              resourceComparator, required, getMaximumAllocation()
               );
       
       // Use percentage of node required to bias against large containers...
@@ -1043,7 +1080,7 @@ public class LeafQueue implements CSQueue {
             " app.#re-reserve=" + application.getReReservations(priority) + 
             " reserved=" + reservedContainers + 
             " nodeFactor=" + nodeFactor + 
-            " minAllocFactor=" + minimumAllocationFactor +
+            " minAllocFactor=" + getMinimumAllocationFactor() +
             " starvation=" + starvation);
       }
     }

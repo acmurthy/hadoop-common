@@ -114,6 +114,18 @@ public class Resources {
     return multiplyTo(clone(lhs), by);
   }
   
+  public static Resource roundUp(
+      ResourceComparator resourceComparator, 
+      Resource lhs, Resource rhs) {
+    return resourceComparator.roundUp(lhs, rhs);
+  }
+  
+  public static Resource roundDown(
+      ResourceComparator resourceComparator, 
+      Resource lhs, Resource rhs) {
+    return resourceComparator.roundDown(lhs, rhs);
+  }
+  
   /**
    * Mutliply a resource by a {@code double}. Note that integral 
    * resource quantites are subject to rounding during cast.
@@ -124,9 +136,19 @@ public class Resources {
     return out;
   }
 
+  public static float divideBy(ResourceComparator comparator,
+      Resource lhs, Resource rhs) {
+    return comparator.divideBy(lhs, rhs);
+  }
+  
   public static float divide(ResourceComparator comparator,
       Resource lhs, Resource rhs) {
     return comparator.divide(lhs, rhs);
+  }
+  
+  public static Resource divideAndCeil(
+      ResourceComparator comparator, Resource lhs, int rhs) {
+    return comparator.divideAndCeil(lhs, rhs);
   }
   
   public static boolean equals(Resource lhs, Resource rhs) {

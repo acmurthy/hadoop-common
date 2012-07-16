@@ -17,11 +17,15 @@
 */
 package org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.yarn.Lock;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.server.resourcemanager.resource.Resources;
 
 class CSQueueUtils {
+  
+  private static final Log LOG = LogFactory.getLog(CSQueueUtils.class);
   
   final static float EPSILON = 0.0001f;
   
@@ -95,10 +99,18 @@ class CSQueueUtils {
     childQueue.getMetrics().setAvailableResourcesToQueue(
         Resources.createResource(available));
   }
+  
+  static int divideAndCeil(int a, int b) {
+    if (b == 0) {
+      LOG.info("divideAndCeil called with a=" + a + " b=" + b);
+      return 0;
+    }
+    return (a + (b - 1)) / b;
+  }
 
   public static int roundUp(Resource minimumAllocation, int memory) {
     int minMemory = minimumAllocation.getMemory();
-    return LeafQueue.divideAndCeil(memory, minMemory) * minMemory; 
+    return divideAndCeil(memory, minMemory) * minMemory; 
   }
 
   public static int roundDown(Resource minimumAllocation, int memory) {

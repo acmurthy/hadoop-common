@@ -19,7 +19,7 @@ package org.apache.hadoop.yarn.server.resourcemanager.resource;
 
 import org.apache.hadoop.yarn.api.records.Resource;
 
-public class ResourceMemoryCpuComparator implements ResourceComparator {
+public class ResourceMemoryCpuComparator extends ResourceComparator {
 
   private Resource clusterResource;
   
@@ -58,8 +58,29 @@ public class ResourceMemoryCpuComparator implements ResourceComparator {
   }
 
   @Override
+  public Resource multiplyAndRoundUp(Resource resource, float by, Resource step) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public Resource multiplyAndRoundDown(Resource resource, float by,
+      Resource step) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
   public float divide(Resource lhs, Resource rhs) {
     return getResourceAsValue(lhs) / getResourceAsValue(rhs);
+  }
+
+  @Override
+  public float divideBy(Resource lhs, Resource rhs) {
+    return Math.max(
+        (float)lhs.getMemory()/rhs.getMemory(), 
+        (float)lhs.getCores()/rhs.getCores()
+        );
   }
 
 }

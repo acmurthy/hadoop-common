@@ -354,7 +354,7 @@ public class ParentQueue implements CSQueue {
         "numChildQueue= " + childQueues.size() + ", " + 
         "capacity=" + capacity + ", " +  
         "absoluteCapacity=" + absoluteCapacity + ", " +
-        "usedResources=" + usedResources.getMemory() + "MB, " + 
+        "usedResources=" + usedResources + 
         "usedCapacity=" + getUsedCapacity() + ", " + 
         "numApps=" + getNumApplications() + ", " + 
         "numContainers=" + getNumContainers();
@@ -586,11 +586,18 @@ public class ParentQueue implements CSQueue {
 
   private synchronized boolean assignToQueue(Resource clusterResource) {
     // Check how of the cluster's absolute capacity we are currently using...
-    float currentCapacity = 
-      (float)(usedResources.getMemory()) / clusterResource.getMemory();
+    float currentCapacity =
+        Resources.divide(
+            resourceComparator, 
+            usedResources, 
+            clusterResource);
+      /*
+       (float)(usedResources.getMemory()) / clusterResource.getMemory();
+       */
+    
     if (currentCapacity >= absoluteMaxCapacity) {
       LOG.info(getQueueName() + 
-          " used=" + usedResources.getMemory() + 
+          " used=" + usedResources + 
           " current-capacity (" + currentCapacity + ") " +
           " >= max-capacity (" + absoluteMaxCapacity + ")");
       return false;
@@ -623,7 +630,7 @@ public class ParentQueue implements CSQueue {
       if(LOG.isDebugEnabled()) {
         LOG.debug("Assigned to queue: " + childQueue.getQueuePath() +
           " stats: " + childQueue + " --> " + 
-          assignment.getResource().getMemory() + ", " + assignment.getType());
+          assignment.getResource() + ", " + assignment.getType());
       }
 
       // If we do assign, remove the queue and re-insert in-order to re-sort
