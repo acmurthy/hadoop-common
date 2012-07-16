@@ -58,19 +58,6 @@ public class ResourceMemoryCpuComparator extends ResourceComparator {
   }
 
   @Override
-  public Resource multiplyAndRoundUp(Resource resource, float by, Resource step) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public Resource multiplyAndRoundDown(Resource resource, float by,
-      Resource step) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
   public float divide(Resource lhs, Resource rhs) {
     return getResourceAsValue(lhs) / getResourceAsValue(rhs);
   }
@@ -80,6 +67,30 @@ public class ResourceMemoryCpuComparator extends ResourceComparator {
     return Math.max(
         (float)lhs.getMemory()/rhs.getMemory(), 
         (float)lhs.getCores()/rhs.getCores()
+        );
+  }
+
+  @Override
+  public Resource divideAndCeil(Resource lhs, int rhs) {
+    return Resources.createResource(
+        divideAndCeil(lhs.getMemory(), rhs),
+        divideAndCeil(lhs.getCores(), rhs)
+        );
+  }
+
+  @Override
+  public Resource roundUp(Resource lhs, Resource rhs) {
+    return Resources.createResource(
+        divideAndCeil(lhs.getMemory(), rhs.getMemory()) * rhs.getMemory(),
+        divideAndCeil(lhs.getCores(), rhs.getCores()) * rhs.getCores()
+        ); 
+  }
+
+  @Override
+  public Resource roundDown(Resource lhs, Resource rhs) {
+    return Resources.createResource(
+        (lhs.getMemory() / rhs.getMemory()) * rhs.getMemory(),
+        (lhs.getCores() / rhs.getCores()) * rhs.getCores()
         );
   }
 

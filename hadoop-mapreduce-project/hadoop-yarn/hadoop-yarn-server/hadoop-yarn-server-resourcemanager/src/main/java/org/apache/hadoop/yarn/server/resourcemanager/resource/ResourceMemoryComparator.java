@@ -52,8 +52,7 @@ public class ResourceMemoryComparator extends ResourceComparator {
 
   @Override
   public Resource divideAndCeil(Resource lhs, int rhs) {
-    // TODO Auto-generated method stub
-    return null;
+    return Resources.createResource(divideAndCeil(lhs.getMemory(), rhs));
   }
 
   @Override
