@@ -42,6 +42,7 @@ import org.apache.hadoop.yarn.api.records.QueueUserACLInfo;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.factories.RecordFactory;
 import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
+import org.apache.hadoop.yarn.server.resourcemanager.resource.ResourceComparator;
 import org.apache.hadoop.yarn.server.resourcemanager.resource.Resources;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.Queue;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.QueueMetrics;
@@ -67,6 +68,8 @@ public class FSQueueSchedulable extends Schedulable implements Queue {
   long lastTimeAtMinShare;
   long lastTimeAtHalfFairShare;
 
+  private ResourceComparator resourceComparator;
+  
   public FSQueueSchedulable(FairScheduler scheduler, FSQueue queue) {
     this.scheduler = scheduler;
     this.queue = queue;
@@ -74,6 +77,7 @@ public class FSQueueSchedulable extends Schedulable implements Queue {
     this.metrics = QueueMetrics.forQueue(this.getName(), null, true, scheduler.getConf());
     this.lastTimeAtMinShare = scheduler.getClock().getTime();
     this.lastTimeAtHalfFairShare = scheduler.getClock().getTime();
+    this.resourceComparator = scheduler.getResourceComparator();
   }
 
   public void addApp(AppSchedulable app) {
@@ -106,7 +110,7 @@ public class FSQueueSchedulable extends Schedulable implements Queue {
     }
     // if demand exceeds the cap for this queue, limit to the max
     Resource maxRes = queueMgr.getMaxResources(queue.getName());
-    if(Resources.greaterThan(demand, maxRes)) {
+    if(Resources.greaterThan(resourceComparator, demand, maxRes)) {
       demand = maxRes;
     }
   }
@@ -117,7 +121,7 @@ public class FSQueueSchedulable extends Schedulable implements Queue {
   @Override
   public void redistributeShare() {
     if (queue.getSchedulingMode() == SchedulingMode.FAIR) {
-      SchedulingAlgorithms.computeFairShares(appScheds, getFairShare());
+      SchedulingAlgorithms.computeFairShares(resourceComparator, appScheds, getFairShare());
     } else {
       for (AppSchedulable sched: appScheds) {
         sched.setFairShare(Resources.createResource(0));
@@ -149,7 +153,7 @@ public class FSQueueSchedulable extends Schedulable implements Queue {
   public Resource assignContainer(SchedulerNode node, boolean reserved) {
     LOG.debug("Node offered to queue: " + this.getName() + " reserved: " + reserved);
     // If this queue is over its limit, reject
-    if (Resources.greaterThan(this.getResourceUsage(),
+    if (Resources.greaterThan(resourceComparator, this.getResourceUsage(),
         queueMgr.getMaxResources(queue.getName()))) {
       return Resources.none();
     }
@@ -174,7 +178,7 @@ public class FSQueueSchedulable extends Schedulable implements Queue {
       if (mode == SchedulingMode.FIFO) {
         comparator = new SchedulingAlgorithms.FifoComparator();
       } else if (mode == SchedulingMode.FAIR) {
-        comparator = new SchedulingAlgorithms.FairShareComparator();
+        comparator = new SchedulingAlgorithms.FairShareComparator(resourceComparator);
       } else {
         throw new RuntimeException("Unsupported queue scheduling mode " + mode);
       }
