@@ -65,9 +65,7 @@ import org.apache.hadoop.yarn.server.resourcemanager.scheduler.ActiveUsersManage
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.Allocation;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.QueueMetrics;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.ResourceScheduler;
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerApp;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerAppReport;
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerNode;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerNodeReport;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerUtils;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.AppAddedSchedulerEvent;
@@ -118,12 +116,12 @@ public class FairScheduler implements ResourceScheduler {
 
   // This stores per-application scheduling information, indexed by
   // attempt ID's for fast lookup.
-  protected Map<ApplicationAttemptId, SchedulerApp> applications
-  = new HashMap<ApplicationAttemptId, SchedulerApp>();
+  protected Map<ApplicationAttemptId, FSSchedulerApp> applications
+  = new HashMap<ApplicationAttemptId, FSSchedulerApp>();
 
   // Nodes in the cluster, indexed by NodeId
-  private Map<NodeId, SchedulerNode> nodes =
-      new ConcurrentHashMap<NodeId, SchedulerNode>();
+  private Map<NodeId, FSSchedulerNode> nodes =
+      new ConcurrentHashMap<NodeId, FSSchedulerNode>();
 
   // Aggregate capacity of the cluster
   private Resource clusterCapacity =
@@ -166,7 +164,7 @@ public class FairScheduler implements ResourceScheduler {
   }
 
   private RMContainer getRMContainer(ContainerId containerId) {
-    SchedulerApp application =
+    FSSchedulerApp application =
         applications.get(containerId.getApplicationAttemptId());
     return (application == null) ? null : application.getRMContainer(containerId);
   }
@@ -306,7 +304,8 @@ public class FairScheduler implements ResourceScheduler {
     if (scheds.isEmpty() || Resources.equals(toPreempt, Resources.none()))
       return;
 
-    Map<RMContainer, SchedulerApp> apps = new HashMap<RMContainer, SchedulerApp>();
+    Map<RMContainer, FSSchedulerApp> apps = 
+        new HashMap<RMContainer, FSSchedulerApp>();
     Map<RMContainer, FSQueueSchedulable> queues = new HashMap<RMContainer, FSQueueSchedulable>();
 
     // Collect running containers from over-scheduled queues
@@ -546,7 +545,7 @@ public class FairScheduler implements ResourceScheduler {
     LOG.info("Application " + applicationAttemptId + " is done." +
         " finalState=" + rmAppAttemptFinalState);
 
-    SchedulerApp application = applications.get(applicationAttemptId);
+    FSSchedulerApp application = applications.get(applicationAttemptId);
 
     if (application == null) {
       LOG.info("Unknown application " + applicationAttemptId + " has completed!");
@@ -596,7 +595,7 @@ public class FairScheduler implements ResourceScheduler {
 
     // Get the application for the finished container
     ApplicationAttemptId applicationAttemptId = container.getId().getApplicationAttemptId();
-    SchedulerApp application = applications.get(applicationAttemptId);
+    FSSchedulerApp application = applications.get(applicationAttemptId);
     if (application == null) {
       LOG.info("Container " + container + " of" +
           " unknown application " + applicationAttemptId +
@@ -605,7 +604,7 @@ public class FairScheduler implements ResourceScheduler {
     }
 
     // Get the node on which the container was allocated
-    SchedulerNode node = nodes.get(container.getNodeId());
+    FSSchedulerNode node = nodes.get(container.getNodeId());
 
     if (rmContainer.getState() == RMContainerState.RESERVED) {
       application.unreserve(node, rmContainer.getReservedPriority());
@@ -622,7 +621,7 @@ public class FairScheduler implements ResourceScheduler {
   }
 
   private synchronized void addNode(RMNode node) {
-    this.nodes.put(node.getNodeID(), new SchedulerNode(node));
+    this.nodes.put(node.getNodeID(), new FSSchedulerNode(node));
     Resources.addTo(clusterCapacity, node.getTotalCapability());
 
     LOG.info("Added node " + node.getNodeAddress() +
@@ -630,7 +629,7 @@ public class FairScheduler implements ResourceScheduler {
   }
 
   private synchronized void removeNode(RMNode rmNode) {
-    SchedulerNode node = this.nodes.get(rmNode.getNodeID());
+    FSSchedulerNode node = this.nodes.get(rmNode.getNodeID());
     Resources.subtractFrom(clusterCapacity, rmNode.getTotalCapability());
 
     // Remove running containers
@@ -663,7 +662,7 @@ public class FairScheduler implements ResourceScheduler {
       List<ResourceRequest> ask, List<ContainerId> release) {
 
     // Make sure this application exists
-    SchedulerApp application = applications.get(appAttemptId);
+    FSSchedulerApp application = applications.get(appAttemptId);
     if (application == null) {
       LOG.info("Calling allocate on removed " +
           "or non existant application " + appAttemptId);
@@ -724,10 +723,10 @@ public class FairScheduler implements ResourceScheduler {
    * Process a container which has launched on a node, as reported by the
    * node.
    */
-  private void containerLaunchedOnNode(ContainerId containerId, SchedulerNode node) {
+  private void containerLaunchedOnNode(ContainerId containerId, FSSchedulerNode node) {
     // Get the application for the finished container
     ApplicationAttemptId applicationAttemptId = containerId.getApplicationAttemptId();
-    SchedulerApp application = applications.get(applicationAttemptId);
+    FSSchedulerApp application = applications.get(applicationAttemptId);
     if (application == null) {
       LOG.info("Unknown application: " + applicationAttemptId +
           " launched container " + containerId +
@@ -746,7 +745,7 @@ public class FairScheduler implements ResourceScheduler {
       List<ContainerStatus> completedContainers) {
     LOG.info("nodeUpdate: " + nm + " cluster capacity: " + clusterCapacity);
     eventLog.log("HEARTBEAT", nm.getHostName());
-    SchedulerNode node = nodes.get(nm.getNodeID());
+    FSSchedulerNode node = nodes.get(nm.getNodeID());
 
     // Processing the newly launched containers
     for (ContainerStatus launchedContainer : newlyLaunchedContainers) {
@@ -769,7 +768,7 @@ public class FairScheduler implements ResourceScheduler {
     // already, we try to complete the reservation.
     RMContainer reservedContainer = node.getReservedContainer();
     if (reservedContainer != null) {
-      SchedulerApp reservedApplication =
+      FSSchedulerApp reservedApplication =
           applications.get(reservedContainer.getApplicationAttemptId());
 
       // Try to fulfill the reservation
@@ -808,7 +807,7 @@ public class FairScheduler implements ResourceScheduler {
 
   @Override
   public SchedulerNodeReport getNodeReport(NodeId nodeId) {
-    SchedulerNode node = nodes.get(nodeId);
+    FSSchedulerNode node = nodes.get(nodeId);
     return node == null ? null : new SchedulerNodeReport(node);
   }
 

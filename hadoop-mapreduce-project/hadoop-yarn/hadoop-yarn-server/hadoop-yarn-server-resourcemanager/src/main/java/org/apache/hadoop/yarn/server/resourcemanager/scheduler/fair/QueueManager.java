@@ -44,7 +44,6 @@ import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.server.resourcemanager.resource.ResourceComparator;
 import org.apache.hadoop.yarn.server.resourcemanager.resource.Resources;
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerApp;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -427,7 +426,7 @@ public class QueueManager {
   /**
    * Remove an app
    */
-  public synchronized void removeJob(SchedulerApp app) {
+  public synchronized void removeJob(FSSchedulerApp app) {
     getQueue(app.getQueueName()).removeJob(app);
   }
 

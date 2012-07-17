@@ -51,8 +51,8 @@ import org.apache.hadoop.yarn.server.resourcemanager.resource.ResourceComparator
 import org.apache.hadoop.yarn.server.resourcemanager.resource.ResourceMemoryComparator;
 import org.apache.hadoop.yarn.server.resourcemanager.resource.Resources;
 import org.apache.hadoop.yarn.server.resourcemanager.rmnode.RMNodeImpl;
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerApp;
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerNode;
+import org.apache.hadoop.yarn.server.resourcemanager.scheduler.common.fica.FiCaSchedulerApp;
+import org.apache.hadoop.yarn.server.resourcemanager.scheduler.common.fica.FiCaSchedulerNode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -129,8 +129,8 @@ public class TestApplicationLimits {
     LOG.info("Setup top-level queues a and b");
   }
 
-  private SchedulerApp getMockApplication(int appId, String user) {
-    SchedulerApp application = mock(SchedulerApp.class);
+  private FiCaSchedulerApp getMockApplication(int appId, String user) {
+    FiCaSchedulerApp application = mock(FiCaSchedulerApp.class);
     ApplicationAttemptId applicationAttemptId =
         TestUtils.getMockApplicationAttemptId(appId, 0);
     doReturn(applicationAttemptId.getApplicationId()).
@@ -229,7 +229,7 @@ public class TestApplicationLimits {
     
     int APPLICATION_ID = 0;
     // Submit first application
-    SchedulerApp app_0 = getMockApplication(APPLICATION_ID++, user_0);
+    FiCaSchedulerApp app_0 = getMockApplication(APPLICATION_ID++, user_0);
     queue.submitApplication(app_0, user_0, A);
     assertEquals(1, queue.getNumActiveApplications());
     assertEquals(0, queue.getNumPendingApplications());
@@ -237,7 +237,7 @@ public class TestApplicationLimits {
     assertEquals(0, queue.getNumPendingApplications(user_0));
 
     // Submit second application
-    SchedulerApp app_1 = getMockApplication(APPLICATION_ID++, user_0);
+    FiCaSchedulerApp app_1 = getMockApplication(APPLICATION_ID++, user_0);
     queue.submitApplication(app_1, user_0, A);
     assertEquals(2, queue.getNumActiveApplications());
     assertEquals(0, queue.getNumPendingApplications());
@@ -245,7 +245,7 @@ public class TestApplicationLimits {
     assertEquals(0, queue.getNumPendingApplications(user_0));
     
     // Submit third application, should remain pending
-    SchedulerApp app_2 = getMockApplication(APPLICATION_ID++, user_0);
+    FiCaSchedulerApp app_2 = getMockApplication(APPLICATION_ID++, user_0);
     queue.submitApplication(app_2, user_0, A);
     assertEquals(2, queue.getNumActiveApplications());
     assertEquals(1, queue.getNumPendingApplications());
@@ -260,7 +260,7 @@ public class TestApplicationLimits {
     assertEquals(0, queue.getNumPendingApplications(user_0));
     
     // Submit another one for user_0
-    SchedulerApp app_3 = getMockApplication(APPLICATION_ID++, user_0);
+    FiCaSchedulerApp app_3 = getMockApplication(APPLICATION_ID++, user_0);
     queue.submitApplication(app_3, user_0, A);
     assertEquals(2, queue.getNumActiveApplications());
     assertEquals(1, queue.getNumPendingApplications());
@@ -271,7 +271,7 @@ public class TestApplicationLimits {
     doReturn(3).when(queue).getMaximumActiveApplications();
     
     // Submit first app for user_1
-    SchedulerApp app_4 = getMockApplication(APPLICATION_ID++, user_1);
+    FiCaSchedulerApp app_4 = getMockApplication(APPLICATION_ID++, user_1);
     queue.submitApplication(app_4, user_1, A);
     assertEquals(3, queue.getNumActiveApplications());
     assertEquals(1, queue.getNumPendingApplications());
@@ -281,7 +281,7 @@ public class TestApplicationLimits {
     assertEquals(0, queue.getNumPendingApplications(user_1));
 
     // Submit second app for user_1, should block due to queue-limit
-    SchedulerApp app_5 = getMockApplication(APPLICATION_ID++, user_1);
+    FiCaSchedulerApp app_5 = getMockApplication(APPLICATION_ID++, user_1);
     queue.submitApplication(app_5, user_1, A);
     assertEquals(3, queue.getNumActiveApplications());
     assertEquals(2, queue.getNumPendingApplications());
@@ -310,7 +310,7 @@ public class TestApplicationLimits {
     doReturn(2).when(queue).getMaximumActiveApplications();
 
     // Submit first application
-    SchedulerApp app_0 = getMockApplication(APPLICATION_ID++, user_0);
+    FiCaSchedulerApp app_0 = getMockApplication(APPLICATION_ID++, user_0);
     queue.submitApplication(app_0, user_0, A);
     assertEquals(1, queue.getNumActiveApplications());
     assertEquals(0, queue.getNumPendingApplications());
@@ -319,7 +319,7 @@ public class TestApplicationLimits {
     assertTrue(queue.activeApplications.contains(app_0));
 
     // Submit second application
-    SchedulerApp app_1 = getMockApplication(APPLICATION_ID++, user_0);
+    FiCaSchedulerApp app_1 = getMockApplication(APPLICATION_ID++, user_0);
     queue.submitApplication(app_1, user_0, A);
     assertEquals(2, queue.getNumActiveApplications());
     assertEquals(0, queue.getNumPendingApplications());
@@ -328,7 +328,7 @@ public class TestApplicationLimits {
     assertTrue(queue.activeApplications.contains(app_1));
 
     // Submit third application, should remain pending
-    SchedulerApp app_2 = getMockApplication(APPLICATION_ID++, user_0);
+    FiCaSchedulerApp app_2 = getMockApplication(APPLICATION_ID++, user_0);
     queue.submitApplication(app_2, user_0, A);
     assertEquals(2, queue.getNumActiveApplications());
     assertEquals(1, queue.getNumPendingApplications());
@@ -337,7 +337,7 @@ public class TestApplicationLimits {
     assertTrue(queue.pendingApplications.contains(app_2));
 
     // Submit fourth application, should remain pending
-    SchedulerApp app_3 = getMockApplication(APPLICATION_ID++, user_0);
+    FiCaSchedulerApp app_3 = getMockApplication(APPLICATION_ID++, user_0);
     queue.submitApplication(app_3, user_0, A);
     assertEquals(2, queue.getNumActiveApplications());
     assertEquals(2, queue.getNumPendingApplications());
@@ -415,7 +415,7 @@ public class TestApplicationLimits {
     
     String host_0 = "host_0";
     String rack_0 = "rack_0";
-    SchedulerNode node_0 = TestUtils.getMockNode(host_0, rack_0, 0, 16*GB);
+    FiCaSchedulerNode node_0 = TestUtils.getMockNode(host_0, rack_0, 0, 16*GB);
 
     final String user_0 = "user_0";
     final String user_1 = "user_1";
@@ -430,8 +430,8 @@ public class TestApplicationLimits {
     // and check headroom
     final ApplicationAttemptId appAttemptId_0_0 = 
         TestUtils.getMockApplicationAttemptId(0, 0); 
-    SchedulerApp app_0_0 = 
-        spy(new SchedulerApp(appAttemptId_0_0, user_0, queue, 
+    FiCaSchedulerApp app_0_0 = 
+        spy(new FiCaSchedulerApp(appAttemptId_0_0, user_0, queue, 
             queue.getActiveUsersManager(), rmContext, null));
     queue.submitApplication(app_0_0, user_0, A);
 
@@ -449,8 +449,8 @@ public class TestApplicationLimits {
     // Submit second application from user_0, check headroom
     final ApplicationAttemptId appAttemptId_0_1 = 
         TestUtils.getMockApplicationAttemptId(1, 0); 
-    SchedulerApp app_0_1 = 
-        spy(new SchedulerApp(appAttemptId_0_1, user_0, queue, 
+    FiCaSchedulerApp app_0_1 = 
+        spy(new FiCaSchedulerApp(appAttemptId_0_1, user_0, queue, 
             queue.getActiveUsersManager(), rmContext, null));
     queue.submitApplication(app_0_1, user_0, A);
     
@@ -468,8 +468,8 @@ public class TestApplicationLimits {
     // Submit first application from user_1, check  for new headroom
     final ApplicationAttemptId appAttemptId_1_0 = 
         TestUtils.getMockApplicationAttemptId(2, 0); 
-    SchedulerApp app_1_0 = 
-        spy(new SchedulerApp(appAttemptId_1_0, user_1, queue, 
+    FiCaSchedulerApp app_1_0 = 
+        spy(new FiCaSchedulerApp(appAttemptId_1_0, user_1, queue, 
             queue.getActiveUsersManager(), rmContext, null));
     queue.submitApplication(app_1_0, user_1, A);
 

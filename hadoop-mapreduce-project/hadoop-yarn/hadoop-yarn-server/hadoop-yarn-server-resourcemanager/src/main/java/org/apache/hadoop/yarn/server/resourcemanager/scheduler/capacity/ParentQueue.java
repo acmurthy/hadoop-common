@@ -52,8 +52,8 @@ import org.apache.hadoop.yarn.server.resourcemanager.rmcontainer.RMContainerEven
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.ActiveUsersManager;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.NodeType;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.QueueMetrics;
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerApp;
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerNode;
+import org.apache.hadoop.yarn.server.resourcemanager.scheduler.common.fica.FiCaSchedulerApp;
+import org.apache.hadoop.yarn.server.resourcemanager.scheduler.common.fica.FiCaSchedulerNode;
 
 @Private
 @Evolving
@@ -425,7 +425,7 @@ public class ParentQueue implements CSQueue {
   }
 
   @Override
-  public void submitApplication(SchedulerApp application, String user,
+  public void submitApplication(FiCaSchedulerApp application, String user,
       String queue) throws AccessControlException {
     
     synchronized (this) {
@@ -457,7 +457,7 @@ public class ParentQueue implements CSQueue {
     }
   }
 
-  private synchronized void addApplication(SchedulerApp application, 
+  private synchronized void addApplication(FiCaSchedulerApp application, 
       String user) {
   
     ++numApplications;
@@ -470,7 +470,7 @@ public class ParentQueue implements CSQueue {
   }
   
   @Override
-  public void finishApplication(SchedulerApp application, String queue) {
+  public void finishApplication(FiCaSchedulerApp application, String queue) {
     
     synchronized (this) {
       removeApplication(application, application.getUser());
@@ -482,7 +482,7 @@ public class ParentQueue implements CSQueue {
     }
   }
 
-  public synchronized void removeApplication(SchedulerApp application, 
+  public synchronized void removeApplication(FiCaSchedulerApp application, 
       String user) {
     
     --numApplications;
@@ -520,7 +520,7 @@ public class ParentQueue implements CSQueue {
 
   @Override
   public synchronized CSAssignment assignContainers(
-      Resource clusterResource, SchedulerNode node) {
+      Resource clusterResource, FiCaSchedulerNode node) {
     CSAssignment assignment = 
         new CSAssignment(Resources.createResource(0), NodeType.NODE_LOCAL);
     
@@ -606,14 +606,14 @@ public class ParentQueue implements CSQueue {
 
   }
   
-  private boolean canAssign(SchedulerNode node) {
+  private boolean canAssign(FiCaSchedulerNode node) {
     return (node.getReservedContainer() == null) && 
         Resources.greaterThanOrEqual(resourceComparator,
             node.getAvailableResource(), minimumAllocation);
   }
   
   synchronized CSAssignment assignContainersToChildQueues(Resource cluster, 
-      SchedulerNode node) {
+      FiCaSchedulerNode node) {
     CSAssignment assignment = 
         new CSAssignment(Resources.createResource(0), NodeType.NODE_LOCAL);
     
@@ -667,7 +667,7 @@ public class ParentQueue implements CSQueue {
   
   @Override
   public void completedContainer(Resource clusterResource,
-      SchedulerApp application, SchedulerNode node, 
+      FiCaSchedulerApp application, FiCaSchedulerNode node, 
       RMContainer rmContainer, ContainerStatus containerStatus, RMContainerEventType event) {
     if (application != null) {
       // Careful! Locking order is important!
@@ -728,7 +728,7 @@ public class ParentQueue implements CSQueue {
   
   @Override
   public void recoverContainer(Resource clusterResource,
-      SchedulerApp application, Container container) {
+      FiCaSchedulerApp application, Container container) {
     // Careful! Locking order is important! 
     synchronized (this) {
       allocateResource(clusterResource, container.getResource());

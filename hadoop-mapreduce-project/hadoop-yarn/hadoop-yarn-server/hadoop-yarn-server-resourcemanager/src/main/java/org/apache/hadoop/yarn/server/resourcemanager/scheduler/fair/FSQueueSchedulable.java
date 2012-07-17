@@ -46,8 +46,6 @@ import org.apache.hadoop.yarn.server.resourcemanager.resource.ResourceComparator
 import org.apache.hadoop.yarn.server.resourcemanager.resource.Resources;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.Queue;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.QueueMetrics;
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerApp;
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerNode;
 
 @Private
 @Unstable
@@ -84,7 +82,7 @@ public class FSQueueSchedulable extends Schedulable implements Queue {
     appScheds.add(app);
   }
 
-  public void removeApp(SchedulerApp app) {
+  public void removeApp(FSSchedulerApp app) {
     for (Iterator<AppSchedulable> it = appScheds.iterator(); it.hasNext();) {
       AppSchedulable appSched = it.next();
       if (appSched.getApp() == app) {
@@ -150,7 +148,7 @@ public class FSQueueSchedulable extends Schedulable implements Queue {
   }
 
   @Override
-  public Resource assignContainer(SchedulerNode node, boolean reserved) {
+  public Resource assignContainer(FSSchedulerNode node, boolean reserved) {
     LOG.debug("Node offered to queue: " + this.getName() + " reserved: " + reserved);
     // If this queue is over its limit, reject
     if (Resources.greaterThan(resourceComparator, this.getResourceUsage(),
