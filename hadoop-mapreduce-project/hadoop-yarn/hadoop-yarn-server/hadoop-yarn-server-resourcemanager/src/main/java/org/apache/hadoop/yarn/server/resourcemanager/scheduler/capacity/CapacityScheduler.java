@@ -181,7 +181,7 @@ implements ResourceScheduler, CapacitySchedulerContext, Configurable {
   }
 
   @Override
-  public Comparator<SchedulerApp> getApplicationComparator() {
+  public Comparator<FiCaSchedulerApp> getApplicationComparator() {
     return applicationComparator;
   }
 
@@ -323,8 +323,6 @@ implements ResourceScheduler, CapacitySchedulerContext, Configurable {
       CapacitySchedulerConfiguration conf, 
       CSQueue parent, String queueName, Map<String, CSQueue> queues,
       Map<String, CSQueue> oldQueues, 
-      Comparator<CSQueue> queueComparator,
-      Comparator<FiCaSchedulerApp> applicationComparator,
       QueueHook hook) throws IOException {
     CSQueue queue;
     String[] childQueueNames = 

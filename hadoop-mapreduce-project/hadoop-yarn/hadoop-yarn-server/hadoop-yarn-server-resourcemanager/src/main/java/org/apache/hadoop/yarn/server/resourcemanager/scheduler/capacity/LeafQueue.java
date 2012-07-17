@@ -128,8 +128,7 @@ public class LeafQueue implements CSQueue {
   private final ResourceComparator resourceComparator;
   
   public LeafQueue(CapacitySchedulerContext cs, 
-      String queueName, CSQueue parent, 
-      Comparator<FiCaSchedulerApp> applicationComparator, CSQueue old) {
+      String queueName, CSQueue parent, CSQueue old) {
     this.scheduler = cs;
     this.queueName = queueName;
     this.parent = parent;
@@ -205,7 +204,7 @@ public class LeafQueue implements CSQueue {
         + ", fullname=" + getQueuePath());
     }
 
-    Comparator<SchedulerApp> applicationComparator =
+    Comparator<FiCaSchedulerApp> applicationComparator =
         cs.getApplicationComparator();
     this.pendingApplications = 
         new TreeSet<FiCaSchedulerApp>(applicationComparator);

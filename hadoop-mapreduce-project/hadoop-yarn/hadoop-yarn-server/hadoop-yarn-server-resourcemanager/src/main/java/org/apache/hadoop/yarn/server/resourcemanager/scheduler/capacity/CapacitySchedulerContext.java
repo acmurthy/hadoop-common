@@ -24,7 +24,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.server.resourcemanager.RMContext;
 import org.apache.hadoop.yarn.server.resourcemanager.resource.ResourceComparator;
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerApp;
+import org.apache.hadoop.yarn.server.resourcemanager.scheduler.common.fica.FiCaSchedulerApp;
 import org.apache.hadoop.yarn.server.security.ContainerTokenSecretManager;
 
 /**
@@ -50,7 +50,7 @@ public interface CapacitySchedulerContext {
    */
   Configuration getConf();
 
-  Comparator<SchedulerApp> getApplicationComparator();
+  Comparator<FiCaSchedulerApp> getApplicationComparator();
 
   ResourceComparator getResourceComparator();
 
