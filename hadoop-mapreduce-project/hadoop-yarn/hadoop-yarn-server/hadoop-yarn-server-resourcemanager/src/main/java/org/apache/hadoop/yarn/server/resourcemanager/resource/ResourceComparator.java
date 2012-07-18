@@ -36,25 +36,42 @@ public abstract class ResourceComparator implements Comparator<Resource> {
 
   public static int divideAndCeil(int a, int b) {
     if (b == 0) {
-      LOG.info("divideAndCeil called with a=" + a + " b=" + b);
+      try {
+        throw new Exception();
+      } catch (Exception e) {
+        LOG.info("divideAndCeil called with a=" + a + " b=" + b, e);
+      }
       return 0;
     }
     return (a + (b - 1)) / b;
   }
 
+  public static int roundUp(int a, int b) {
+    return divideAndCeil(a, b) * b;
+  }
+
+  public static int roundDown(int a, int b) {
+    return (a / b) * b;
+  }
 
   public abstract void setClusterResource(Resource clusterResource);
   
   public abstract int computeAvailableContainers(
       Resource available, Resource required);
 
+  public abstract Resource multiplyAndNormalizeUp(
+      Resource lhs, double by, Resource factor);
+  
+  public abstract Resource multiplyAndNormalizeDown(
+      Resource lhs, double by, Resource factor);
+  
   public abstract Resource roundUp(Resource lhs, Resource rhs);
 
   public abstract Resource roundDown(Resource lhs, Resource rhs);
   
   public abstract float divide(Resource lhs, Resource rhs);
   
-  public abstract float divideBy(Resource lhs, Resource rhs);
+  public abstract float ratio(Resource lhs, Resource rhs);
 
   public abstract Resource divideAndCeil(Resource lhs, int rhs);
   

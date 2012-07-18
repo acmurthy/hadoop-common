@@ -114,31 +114,40 @@ public class Resources {
     return multiplyTo(clone(lhs), by);
   }
   
+  public static Resource multiplyAndNormalizeUp(
+      ResourceComparator resourceComparator,
+      Resource lhs, double by, Resource factor) {
+    return resourceComparator.multiplyAndNormalizeUp(lhs, by, factor);
+  }
+  
+  public static Resource multiplyAndNormalizeDown(
+      ResourceComparator resourceComparator,
+      Resource lhs, double by, Resource factor) {
+    return resourceComparator.multiplyAndNormalizeDown(lhs, by, factor);
+  }
+  
+  public static Resource multiplyAndRoundDown(Resource lhs, double by) {
+    Resource out = clone(lhs);
+    out.setMemory((int)Math.ceil(lhs.getMemory() * by));
+    out.setCores((int)Math.ceil(lhs.getCores() * by));
+    return out;
+  }
+  
   public static Resource roundUp(
       ResourceComparator resourceComparator, 
-      Resource lhs, Resource rhs) {
-    return resourceComparator.roundUp(lhs, rhs);
+      Resource lhs, Resource factor) {
+    return resourceComparator.roundUp(lhs, factor);
   }
   
   public static Resource roundDown(
       ResourceComparator resourceComparator, 
-      Resource lhs, Resource rhs) {
-    return resourceComparator.roundDown(lhs, rhs);
+      Resource lhs, Resource factor) {
+    return resourceComparator.roundDown(lhs, factor);
   }
   
-  /**
-   * Mutliply a resource by a {@code double}. Note that integral 
-   * resource quantites are subject to rounding during cast.
-   */
-  public static Resource multiply(Resource lhs, double by) {
-    Resource out = clone(lhs);
-    out.setMemory((int) (lhs.getMemory() * by));
-    return out;
-  }
-
-  public static float divideBy(ResourceComparator comparator,
+  public static float ratio(ResourceComparator comparator,
       Resource lhs, Resource rhs) {
-    return comparator.divideBy(lhs, rhs);
+    return comparator.ratio(lhs, rhs);
   }
   
   public static float divide(ResourceComparator comparator,

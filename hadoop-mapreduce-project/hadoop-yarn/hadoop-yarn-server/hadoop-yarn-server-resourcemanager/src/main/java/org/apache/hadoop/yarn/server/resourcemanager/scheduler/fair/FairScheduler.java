@@ -257,8 +257,11 @@ public class FairScheduler implements ResourceScheduler {
    * This is defined as being below half its fair share.
    */
   boolean isStarvedForFairShare(FSQueueSchedulable sched) {
-    Resource desiredFairShare = Resources.max(resourceComparator,
-        Resources.multiply(sched.getFairShare(), .5), sched.getDemand());
+    Resource desiredFairShare = 
+        Resources.max(
+            resourceComparator,
+            Resources.multiplyAndRoundDown(sched.getFairShare(), .5), 
+            sched.getDemand());
     return Resources.lessThan(resourceComparator, 
         sched.getResourceUsage(), desiredFairShare);
   }

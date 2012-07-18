@@ -25,24 +25,43 @@ public class ResourceMemoryCpuComparator extends ResourceComparator {
   
   @Override
   public int compare(Resource lhs, Resource rhs) {
-    float l = getResourceAsValue(lhs);
-    float r = getResourceAsValue(rhs);
+    
+    if (lhs.equals(rhs)) {
+      return 0;
+    }
+    
+    float l = getResourceAsValue(lhs, true);
+    float r = getResourceAsValue(rhs, true);
     
     if (l < r) {
       return -1;
     } else if (l > r) {
       return 1;
+    } else {
+      l = getResourceAsValue(lhs, false);
+      r = getResourceAsValue(rhs, false);
+      if (l < r) {
+        return -1;
+      } else if (l > r) {
+        return 1;
+      }
     }
     
     return 0;
   }
 
-  protected float getResourceAsValue(Resource resource) {
+  protected float getResourceAsValue(Resource resource, boolean dominant) {
     // Just use 'dominant' resource
-    return Math.max(
-        (float)resource.getMemory() / clusterResource.getMemory(), 
-        (float)resource.getCores() / clusterResource.getCores()
-        );
+    return (dominant) ?
+        Math.max(
+            (float)resource.getMemory() / clusterResource.getMemory(), 
+            (float)resource.getCores() / clusterResource.getCores()
+            ) 
+        :
+          Math.min(
+              (float)resource.getMemory() / clusterResource.getMemory(), 
+              (float)resource.getCores() / clusterResource.getCores()
+              ); 
   }
   
   @Override
@@ -59,11 +78,11 @@ public class ResourceMemoryCpuComparator extends ResourceComparator {
 
   @Override
   public float divide(Resource lhs, Resource rhs) {
-    return getResourceAsValue(lhs) / getResourceAsValue(rhs);
+    return getResourceAsValue(lhs, true) / getResourceAsValue(rhs, true);
   }
 
   @Override
-  public float divideBy(Resource lhs, Resource rhs) {
+  public float ratio(Resource lhs, Resource rhs) {
     return Math.max(
         (float)lhs.getMemory()/rhs.getMemory(), 
         (float)lhs.getCores()/rhs.getCores()
@@ -81,16 +100,40 @@ public class ResourceMemoryCpuComparator extends ResourceComparator {
   @Override
   public Resource roundUp(Resource lhs, Resource rhs) {
     return Resources.createResource(
-        divideAndCeil(lhs.getMemory(), rhs.getMemory()) * rhs.getMemory(),
-        divideAndCeil(lhs.getCores(), rhs.getCores()) * rhs.getCores()
-        ); 
+        roundUp(lhs.getMemory(), rhs.getMemory()),
+        roundUp(lhs.getCores(), rhs.getCores())
+        );
   }
 
   @Override
   public Resource roundDown(Resource lhs, Resource rhs) {
     return Resources.createResource(
-        (lhs.getMemory() / rhs.getMemory()) * rhs.getMemory(),
-        (lhs.getCores() / rhs.getCores()) * rhs.getCores()
+        roundDown(lhs.getMemory(), rhs.getMemory()),
+        roundDown(lhs.getCores(), rhs.getCores())
+        );
+  }
+
+  @Override
+  public Resource multiplyAndNormalizeUp(Resource lhs, double by,
+      Resource factor) {
+    return Resources.createResource(
+        roundUp((int)Math.ceil(lhs.getMemory() * by), factor.getMemory()),
+        roundUp((int)Math.ceil(lhs.getCores() * by), factor.getCores())
+        );
+  }
+
+  @Override
+  public Resource multiplyAndNormalizeDown(Resource lhs, double by,
+      Resource factor) {
+    return Resources.createResource(
+        roundDown(
+            (int)(lhs.getMemory() * by), 
+            factor.getMemory()
+            ),
+        roundDown(
+            (int)(lhs.getCores() * by), 
+            factor.getCores()
+            )
         );
   }
 

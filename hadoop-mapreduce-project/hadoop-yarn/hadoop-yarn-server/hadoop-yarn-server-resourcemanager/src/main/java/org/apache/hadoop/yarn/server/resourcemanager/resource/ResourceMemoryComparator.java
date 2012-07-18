@@ -46,7 +46,7 @@ public class ResourceMemoryComparator extends ResourceComparator {
   }
 
   @Override
-  public float divideBy(Resource lhs, Resource rhs) {
+  public float ratio(Resource lhs, Resource rhs) {
     return divide(lhs, rhs);
   }
 
@@ -57,14 +57,32 @@ public class ResourceMemoryComparator extends ResourceComparator {
 
   @Override
   public Resource roundUp(Resource lhs, Resource rhs) {
-    return Resources.createResource(
-        divideAndCeil(lhs.getMemory(), rhs.getMemory()) * rhs.getMemory()); 
+    return Resources.createResource(roundUp(lhs.getMemory(), rhs.getMemory()));
   }
 
   @Override
   public Resource roundDown(Resource lhs, Resource rhs) {
     return Resources.createResource(
-        (lhs.getMemory() / rhs.getMemory()) * rhs.getMemory());
+        roundDown(lhs.getMemory(), rhs.getMemory()));
+  }
+
+  @Override
+  public Resource multiplyAndNormalizeUp(Resource lhs, double by,
+      Resource factor) {
+    return Resources.createResource(
+        roundUp((int)Math.ceil(lhs.getMemory() * by), factor.getMemory())
+        );
+  }
+
+  @Override
+  public Resource multiplyAndNormalizeDown(Resource lhs, double by,
+      Resource factor) {
+    return Resources.createResource(
+        roundDown(
+            (int)(lhs.getMemory() * by), 
+            factor.getMemory()
+            )
+        );
   }
 
 }
