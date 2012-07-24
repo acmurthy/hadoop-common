@@ -128,8 +128,8 @@ public class Resources {
   
   public static Resource multiplyAndRoundDown(Resource lhs, double by) {
     Resource out = clone(lhs);
-    out.setMemory((int)Math.ceil(lhs.getMemory() * by));
-    out.setCores((int)Math.ceil(lhs.getCores() * by));
+    out.setMemory((int)(lhs.getMemory() * by));
+    out.setCores((int)(lhs.getCores() * by));
     return out;
   }
   

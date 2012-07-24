@@ -36,11 +36,7 @@ public abstract class ResourceComparator implements Comparator<Resource> {
 
   public static int divideAndCeil(int a, int b) {
     if (b == 0) {
-      try {
-        throw new Exception();
-      } catch (Exception e) {
-        LOG.info("divideAndCeil called with a=" + a + " b=" + b, e);
-      }
+      LOG.info("divideAndCeil called with a=" + a + " b=" + b);
       return 0;
     }
     return (a + (b - 1)) / b;

@@ -274,4 +274,10 @@ public class CapacitySchedulerConfiguration extends Configuration {
               ResourceComparator.class), 
         this);
   }
+
+  public void setResourceComparator(
+      Class<? extends ResourceComparator> comparatorClass) {
+    setClass(
+        RESOURCE_COMPARATOR_CLASS, comparatorClass, ResourceComparator.class);
+  }
 }

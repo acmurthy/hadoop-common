@@ -1002,19 +1002,20 @@ public class LeafQueue implements CSQueue {
               )
           );
     */
-    Resource userCapacityLimit = 
-        Resources.multiplyAndRoundDown(currentCapacity, userLimitFactor);
     Resource limit =
         Resources.roundUp(
             resourceComparator, 
             Resources.min(
-                resourceComparator, 
+                resourceComparator,   
                 Resources.max(
                     resourceComparator, 
                     Resources.divideAndCeil(
                         resourceComparator, currentCapacity, activeUsers),
                     Resources.divideAndCeil(
-                        resourceComparator, userCapacityLimit, 100)
+                        resourceComparator, 
+                        Resources.multiplyAndRoundDown(
+                            currentCapacity, userLimit), 
+                        100)
                     ), 
                 Resources.multiplyAndRoundDown(queueCapacity, userLimitFactor)
                 ), 
