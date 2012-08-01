@@ -115,9 +115,6 @@ public class CapacitySchedulerConfiguration extends Configuration {
       PREFIX +"user-metrics.enable";
   @Private public static final boolean DEFAULT_ENABLE_USER_METRICS = false;
 
-  @Private public static final String RESOURCE_COMPARATOR_CLASS =
-      PREFIX + "resource-comparator";
-
   @Private public static final Class<? extends ResourceComparator> 
   DEFAULT_RESOURCE_COMPARATOR_CLASS = ResourceMemoryComparator.class;
   
@@ -286,14 +283,20 @@ public class CapacitySchedulerConfiguration extends Configuration {
     int minimumMemory = getInt(
         YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB,
         YarnConfiguration.DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_MB);
-    return Resources.createResource(minimumMemory);
+    int minimumCores = getInt(
+        YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_CORES,
+        YarnConfiguration.DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_CORES);
+    return Resources.createResource(minimumMemory, minimumCores);
   }
 
   public Resource getMaximumAllocation() {
     int maximumMemory = getInt(
         YarnConfiguration.RM_SCHEDULER_MAXIMUM_ALLOCATION_MB,
         YarnConfiguration.DEFAULT_RM_SCHEDULER_MAXIMUM_ALLOCATION_MB);
-    return Resources.createResource(maximumMemory);
+    int maximumCores = getInt(
+        YarnConfiguration.RM_SCHEDULER_MAXIMUM_ALLOCATION_CORES,
+        YarnConfiguration.DEFAULT_RM_SCHEDULER_MAXIMUM_ALLOCATION_CORES);
+    return Resources.createResource(maximumMemory, maximumCores);
   }
 
   public boolean getEnableUserMetrics() {
@@ -302,14 +305,18 @@ public class CapacitySchedulerConfiguration extends Configuration {
 
   public ResourceComparator getResourceComparator() {
     return ReflectionUtils.newInstance(
-        getClass(RESOURCE_COMPARATOR_CLASS, DEFAULT_RESOURCE_COMPARATOR_CLASS, 
-              ResourceComparator.class), 
+        getClass(
+            YarnConfiguration.RESOURCE_COMPARATOR_CLASS, 
+            DEFAULT_RESOURCE_COMPARATOR_CLASS, 
+            ResourceComparator.class), 
         this);
   }
 
   public void setResourceComparator(
       Class<? extends ResourceComparator> comparatorClass) {
     setClass(
-        RESOURCE_COMPARATOR_CLASS, comparatorClass, ResourceComparator.class);
+        YarnConfiguration.RESOURCE_COMPARATOR_CLASS, 
+        comparatorClass, 
+        ResourceComparator.class);
   }
 }

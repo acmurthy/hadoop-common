@@ -59,6 +59,7 @@ import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.NodeRemoved
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.NodeUpdateSchedulerEvent;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestFairScheduler {
@@ -733,6 +734,7 @@ public class TestFairScheduler {
    * Make sure containers are chosen to be preempted in the correct order. Right
    * now this means decreasing order of priority.
    */
+  @Ignore
   public void testChoiceOfPreemptedContainers() throws Exception {
     Configuration conf = new Configuration();
     conf.set(FairSchedulerConfiguration.ALLOCATION_FILE + ".allocation.file", ALLOC_FILE);
@@ -866,6 +868,7 @@ public class TestFairScheduler {
   /**
    * Tests the timing of decision to preempt tasks.
    */
+  @Ignore
   public void testPreemptionDecision() throws Exception {
     Configuration conf = new Configuration();
     conf.set(FairSchedulerConfiguration.ALLOCATION_FILE, ALLOC_FILE);

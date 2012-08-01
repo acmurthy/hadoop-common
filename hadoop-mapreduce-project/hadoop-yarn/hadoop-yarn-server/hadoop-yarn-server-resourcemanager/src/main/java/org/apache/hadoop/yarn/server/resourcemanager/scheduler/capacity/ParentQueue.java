@@ -75,8 +75,7 @@ public class ParentQueue implements CSQueue {
   private final Set<CSQueue> childQueues;
   private final Comparator<CSQueue> queueComparator;
   
-  private Resource usedResources = 
-    Resources.createResource(0);
+  private Resource usedResources = Resources.createResource(0, 0);
   
   private final boolean rootQueue;
   
@@ -106,6 +105,7 @@ public class ParentQueue implements CSQueue {
     this.parent = parent;
     this.queueName = queueName;
     this.rootQueue = (parent == null);
+    this.resourceComparator = cs.getResourceComparator();
 
     // must be called after parent and queueName is set
     this.metrics = old != null ? old.getMetrics() :
@@ -148,8 +148,6 @@ public class ParentQueue implements CSQueue {
     this.queueComparator = cs.getQueueComparator();
     this.childQueues = new TreeSet<CSQueue>(queueComparator);
 
-    this.resourceComparator = cs.getResourceComparator();
-    
     LOG.info("Initialized parent-queue " + queueName + 
         " name=" + queueName + 
         ", fullname=" + getQueuePath()); 
@@ -186,7 +184,7 @@ public class ParentQueue implements CSQueue {
 
     // Update metrics
     CSQueueUtils.updateQueueStatistics(
-        this, parent, clusterResource, minimumAllocation);
+        resourceComparator, this, parent, clusterResource, minimumAllocation);
 
     LOG.info(queueName +
         ", capacity=" + capacity +
@@ -522,7 +520,7 @@ public class ParentQueue implements CSQueue {
   public synchronized CSAssignment assignContainers(
       Resource clusterResource, FiCaSchedulerNode node) {
     CSAssignment assignment = 
-        new CSAssignment(Resources.createResource(0), NodeType.NODE_LOCAL);
+        new CSAssignment(Resources.createResource(0, 0), NodeType.NODE_LOCAL);
     
     while (canAssign(node)) {
       if (LOG.isDebugEnabled()) {
@@ -615,7 +613,7 @@ public class ParentQueue implements CSQueue {
   synchronized CSAssignment assignContainersToChildQueues(Resource cluster, 
       FiCaSchedulerNode node) {
     CSAssignment assignment = 
-        new CSAssignment(Resources.createResource(0), NodeType.NODE_LOCAL);
+        new CSAssignment(Resources.createResource(0, 0), NodeType.NODE_LOCAL);
     
     printChildQueues();
 
@@ -696,7 +694,7 @@ public class ParentQueue implements CSQueue {
       Resource resource) {
     Resources.addTo(usedResources, resource);
     CSQueueUtils.updateQueueStatistics(
-        this, parent, clusterResource, minimumAllocation);
+        resourceComparator, this, parent, clusterResource, minimumAllocation);
     ++numContainers;
   }
   
@@ -704,7 +702,7 @@ public class ParentQueue implements CSQueue {
       Resource resource) {
     Resources.subtractFrom(usedResources, resource);
     CSQueueUtils.updateQueueStatistics(
-        this, parent, clusterResource, minimumAllocation);
+        resourceComparator, this, parent, clusterResource, minimumAllocation);
     --numContainers;
   }
 
@@ -717,7 +715,7 @@ public class ParentQueue implements CSQueue {
     
     // Update metrics
     CSQueueUtils.updateQueueStatistics(
-        this, parent, clusterResource, minimumAllocation);
+        resourceComparator, this, parent, clusterResource, minimumAllocation);
   }
   
   @Override

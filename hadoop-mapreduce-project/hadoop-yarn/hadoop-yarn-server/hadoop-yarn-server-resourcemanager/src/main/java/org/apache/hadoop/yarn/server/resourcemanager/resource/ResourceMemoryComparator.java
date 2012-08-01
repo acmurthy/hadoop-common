@@ -52,7 +52,7 @@ public class ResourceMemoryComparator extends ResourceComparator {
 
   @Override
   public Resource divideAndCeil(Resource lhs, int rhs) {
-    return Resources.createResource(divideAndCeil(lhs.getMemory(), rhs));
+    return Resources.createResource(divideAndCeil(lhs.getMemory(), rhs), 0);
   }
 
   @Override
@@ -70,7 +70,7 @@ public class ResourceMemoryComparator extends ResourceComparator {
   public Resource multiplyAndNormalizeUp(Resource lhs, double by,
       Resource factor) {
     return Resources.createResource(
-        roundUp((int)Math.ceil(lhs.getMemory() * by), factor.getMemory())
+        roundUp((int)(lhs.getMemory() * by + 0.5), factor.getMemory())
         );
   }
 

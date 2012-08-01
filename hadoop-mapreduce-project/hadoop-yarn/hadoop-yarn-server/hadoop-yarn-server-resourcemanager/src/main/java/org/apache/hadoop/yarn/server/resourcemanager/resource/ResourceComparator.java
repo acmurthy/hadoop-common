@@ -51,7 +51,7 @@ public abstract class ResourceComparator implements Comparator<Resource> {
   }
 
   public abstract void setClusterResource(Resource clusterResource);
-  
+
   public abstract int computeAvailableContainers(
       Resource available, Resource required);
 

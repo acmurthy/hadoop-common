@@ -18,18 +18,17 @@
 
 package org.apache.hadoop.yarn.conf;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
-
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.Iterator;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.net.NetUtils;
 
+import com.google.common.base.Joiner;
+
 public class YarnConfiguration extends Configuration {
-  private static final Splitter ADDR_SPLITTER = Splitter.on(':').trimResults();
+
   private static final Joiner JOINER = Joiner.on("");
 
   private static final String YARN_DEFAULT_XML_FILE = "yarn-default.xml";
@@ -108,16 +107,26 @@ public class YarnConfiguration extends Configuration {
   public static final String DEFAULT_RM_SCHEDULER_ADDRESS = "0.0.0.0:" +
     DEFAULT_RM_SCHEDULER_PORT;
 
-  /** Miniumum memory request grant-able by the RM scheduler. */
+  /** Miniumum request grant-able by the RM scheduler. */
   public static final String RM_SCHEDULER_MINIMUM_ALLOCATION_MB =
     YARN_PREFIX + "scheduler.minimum-allocation-mb";
   public static final int DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_MB = 128;
+  public static final String RM_SCHEDULER_MINIMUM_ALLOCATION_CORES =
+      YARN_PREFIX + "scheduler.minimum-allocation-cores";
+    public static final int DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_CORES = 1;
 
-  /** Maximum memory request grant-able by the RM scheduler. */
+  /** Maximum request grant-able by the RM scheduler. */
   public static final String RM_SCHEDULER_MAXIMUM_ALLOCATION_MB =
     YARN_PREFIX + "scheduler.maximum-allocation-mb";
   public static final int DEFAULT_RM_SCHEDULER_MAXIMUM_ALLOCATION_MB = 10240;
+  public static final String RM_SCHEDULER_MAXIMUM_ALLOCATION_CORES =
+      YARN_PREFIX + "scheduler.maximum-allocation-cores";
+  public static final int DEFAULT_RM_SCHEDULER_MAXIMUM_ALLOCATION_CORES = 32;
 
+  /** ResourceComparator for scheduling. */
+  public static final String RESOURCE_COMPARATOR_CLASS =
+      YARN_PREFIX + ".scheduler.resource-comparator";
+    
   /** Number of threads to handle scheduler interface.*/
   public static final String RM_SCHEDULER_CLIENT_THREAD_COUNT =
     RM_PREFIX + "scheduler.client.thread-count";
@@ -630,4 +639,5 @@ public class YarnConfiguration extends Configuration {
   public static String getRMWebAppURL(Configuration conf) {
     return JOINER.join("http://", getRMWebAppHostAndPort(conf));
   }
+  
 }

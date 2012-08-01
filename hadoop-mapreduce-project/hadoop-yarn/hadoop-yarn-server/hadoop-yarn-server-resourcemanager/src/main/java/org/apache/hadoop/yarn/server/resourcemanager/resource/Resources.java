@@ -68,7 +68,7 @@ public class Resources {
   public static Resource createResource(int memory, int cores) {
     Resource resource = Records.newRecord(Resource.class);
     resource.setMemory(memory);
-    resource.setCores(1);
+    resource.setCores(cores);
     return resource;
   }
 
@@ -104,13 +104,13 @@ public class Resources {
     return subtract(NONE, resource);
   }
 
-  public static Resource multiplyTo(Resource lhs, int by) {
-    lhs.setMemory(lhs.getMemory() * by);
-    lhs.setCores(lhs.getCores() * by);
+  public static Resource multiplyTo(Resource lhs, double by) {
+    lhs.setMemory((int)(lhs.getMemory() * by));
+    lhs.setCores((int)(lhs.getCores() * by));
     return lhs;
   }
 
-  public static Resource multiply(Resource lhs, int by) {
+  public static Resource multiply(Resource lhs, double by) {
     return multiplyTo(clone(lhs), by);
   }
   

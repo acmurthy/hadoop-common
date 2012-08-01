@@ -471,7 +471,7 @@ implements ResourceScheduler, CapacitySchedulerContext, Configurable {
   }
 
   private static final Allocation EMPTY_ALLOCATION = 
-      new Allocation(EMPTY_CONTAINER_LIST, Resources.createResource(0));
+      new Allocation(EMPTY_CONTAINER_LIST, Resources.createResource(0, 0));
 
   @Override
   @Lock(Lock.NoLock.class)
