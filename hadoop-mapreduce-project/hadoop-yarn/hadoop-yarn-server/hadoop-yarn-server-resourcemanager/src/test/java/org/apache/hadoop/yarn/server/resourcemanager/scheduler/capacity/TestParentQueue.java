@@ -297,8 +297,7 @@ public class TestParentQueue {
     try {
       CapacityScheduler.parseQueue(csContext, csConf, null,
           CapacitySchedulerConfiguration.ROOT, queues, queues,
-          CapacityScheduler.queueComparator,
-          CapacityScheduler.applicationComparator, TestUtils.spyHook);
+          TestUtils.spyHook);
     } catch (IllegalArgumentException ie) {
       exceptionOccured = true;
     }
@@ -312,8 +311,7 @@ public class TestParentQueue {
     try {
       CapacityScheduler.parseQueue(csContext, csConf, null,
           CapacitySchedulerConfiguration.ROOT, queues, queues,
-          CapacityScheduler.queueComparator,
-          CapacityScheduler.applicationComparator, TestUtils.spyHook);
+          TestUtils.spyHook);
     } catch (IllegalArgumentException ie) {
       exceptionOccured = true;
     }
@@ -327,8 +325,7 @@ public class TestParentQueue {
     try {
       CapacityScheduler.parseQueue(csContext, csConf, null,
           CapacitySchedulerConfiguration.ROOT, queues, queues,
-          CapacityScheduler.queueComparator,
-          CapacityScheduler.applicationComparator, TestUtils.spyHook);
+          TestUtils.spyHook);
     } catch (IllegalArgumentException ie) {
       exceptionOccured = true;
     }
